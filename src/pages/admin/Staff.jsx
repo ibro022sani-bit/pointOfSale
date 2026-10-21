@@ -264,7 +264,7 @@ function StaffModal({ member, branches, isSuperAdmin, currentUserBranchId, onClo
               type="email"
               value={form.email}
               onChange={handleChange}
-              placeholder="e.g. youremail@sadeeqagrovet.com"
+              placeholder="e.g. youremail@gmail..com"
               autoComplete="off"
               className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
             />

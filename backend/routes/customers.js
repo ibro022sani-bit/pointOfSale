@@ -180,7 +180,7 @@ router.post('/:id/reminders/send-now', requireRole('super_admin', 'admin'), asyn
       return error(res, 'This customer has no outstanding balance')
     }
 
-    const message = `Hi ${customer.name}, this is a reminder from Sadeeq Agrovet that you have an outstanding balance of ₦${Number(account.current_balance).toLocaleString()}. Kindly settle at your earliest convenience.`
+    const message = `Hi ${customer.name}, this is a reminder from Almubeen General Merchant that you have an outstanding balance of ₦${Number(account.current_balance).toLocaleString()}. Kindly settle at your earliest convenience.`
 
     const sent = await sendSMS(customer.phone, message)
 

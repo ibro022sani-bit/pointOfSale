@@ -5,7 +5,7 @@ import api from '../../services/api'
 import useAuthStore from '../../store/authStore'
 import useBranchStore from '../../store/branchStore'
 
-const SHOP_NAME = 'SADEEQ AGROVET AND GENERAL MERCHANT'
+const SHOP_NAME = 'ALMUBEEN GENERAL ENTERPRISES'
 
 function Deposits() {
   const { user } = useAuthStore()

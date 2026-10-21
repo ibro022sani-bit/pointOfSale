@@ -59,8 +59,8 @@ function Login() {
           <div className="inline-flex justify-center mb-4">
             <Logo size={64} showText={false} />
           </div>
-          <h1 className="text-2xl font-bold text-gray-800">SADEEQ AGROVET</h1>
-          <p className="text-gray-500 text-sm mt-1">AND GENERAL MERCHANT</p>
+          <h1 className="text-2xl font-bold text-gray-800">ALMUBEEN</h1>
+          <p className="text-gray-500 text-sm mt-1">GENERAL MERCHANT</p>
         </div>
 
         {/* Card */}

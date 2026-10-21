@@ -1,6 +1,6 @@
 import Dexie from 'dexie'
 
-const db = new Dexie('SadeeqAgrovetDB')
+const db = new Dexie('Almubeen')
 
 db.version(1).stores({
   products: 'id, name, category, barcode, branch_id',

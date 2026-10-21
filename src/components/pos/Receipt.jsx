@@ -41,8 +41,8 @@ function Receipt({ sale, onClose }) {
 
           {/* Shop Header */}
           <div className="text-center mb-3">
-            <h1 className="text-base font-bold tracking-wide">SADEEQ AGROVET</h1>
-            <p className="text-[10px] text-gray-600">Agricultural Veterinary & General Merchant</p>
+            <h1 className="text-base font-bold tracking-wide">ALMUBEEN</h1>
+            <p className="text-[10px] text-gray-600">GENERAL ENTERPRISES</p>
             <p className="text-[10px] text-gray-500 mt-1">
               {new Date(sale.created_at).toLocaleString('en-NG', {
                 dateStyle: 'medium',

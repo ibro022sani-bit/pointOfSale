@@ -46,7 +46,7 @@ function CashierLayout({ children }) {
               <span className="text-white text-sm font-bold">SA</span>
             </div>
             <div>
-              <p className="text-sm font-bold text-gray-800 leading-tight">Sadeeq Agrovet</p>
+              <p className="text-sm font-bold text-gray-800 leading-tight">Almubeen General Merchant</p>
               <p className="text-xs text-gray-400">Cashier Portal</p>
             </div>
           </div>

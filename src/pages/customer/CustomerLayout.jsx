@@ -37,7 +37,7 @@ function CustomerLayout({ children }) {
               <span className="text-white text-sm font-bold">SA</span>
             </div>
             <div>
-              <p className="text-sm font-bold text-gray-800 leading-tight">SADEEQ AGROVET</p>
+              <p className="text-sm font-bold text-gray-800 leading-tight"><ALMUBEEN></ALMUBEEN></p>
               <p className="text-xs text-gray-400">Customer Portal</p>
             </div>
           </div>

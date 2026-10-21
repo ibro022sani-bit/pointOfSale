@@ -11,7 +11,7 @@ export async function sendSMS(phone, message) {
   try {
     const response = await axios.post(`${process.env.TERMII_BASE_URL}api/sms/send`, {
       to: normalizePhone(phone),
-      from: 'Sadeeq',
+      from: 'ALMUBEEN',
       sms: message,
       type: 'plain',
       channel: 'dnd',

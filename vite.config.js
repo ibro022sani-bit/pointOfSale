@@ -11,9 +11,9 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico'],
       manifest: {
-        name: 'Sadeeq Agrovet POS',
-        short_name: 'Sadeeq POS',
-        description: 'POS System for Sadeeq Agrovet and General Merchant',
+        name: 'Almubeen General Merchant POS',
+        short_name: 'Almubeen',
+        description: 'POS System for Almubeen General Merchant',
         theme_color: '#16a34a',
         background_color: '#f0fdf4',
         display: 'standalone',

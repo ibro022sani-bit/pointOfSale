@@ -51,7 +51,7 @@ function CustomerRegister() {
             <span className="text-white text-lg font-bold">SA</span>
           </div>
           <h1 className="text-lg font-bold text-gray-800">Create Account</h1>
-          <p className="text-sm text-gray-500 mt-1">Sadeeq Agrovet Customer Portal</p>
+          <p className="text-sm text-gray-500 mt-1">ALMUBEEN Customer Portal</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">

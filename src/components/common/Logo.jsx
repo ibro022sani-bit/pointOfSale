@@ -25,7 +25,7 @@ function Logo({ size = 36, showText = true, textClassName = '', subtitle }) {
       ) : (
         <img
           src="/logo.png"
-          alt="Sadeeq Agrovet"
+          alt="Almubeen"
           style={{ width: px, height: px }}
           className="rounded-xl object-contain shrink-0 bg-white"
           onError={() => setBroken(true)}
@@ -33,7 +33,7 @@ function Logo({ size = 36, showText = true, textClassName = '', subtitle }) {
       )}
       {showText && (
         <div>
-          <p className={`font-bold text-gray-800 leading-tight ${textClassName}`}>Sadeeq Agrovet</p>
+          <p className={`font-bold text-gray-800 leading-tight ${textClassName}`}>Almubeen</p>
           {subtitle && <p className="text-xs text-gray-400">{subtitle}</p>}
         </div>
       )}
