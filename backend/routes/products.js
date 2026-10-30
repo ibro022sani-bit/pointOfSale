@@ -8,7 +8,7 @@ router.use(requireAuth)
 
 router.get('/', async (req, res) => {
   try {
-    const { data, error: dbError } = await supabase.from('products').select('*').eq('is_active', true).order('name', { ascending: true })
+    const { data, error: dbError } = await req.db.from('products').select('*').eq('is_active', true).order('name', { ascending: true })
     if (dbError) return error(res, 'Could not fetch products', 500)
     return success(res, data, 'Products fetched')
   } catch (err) {
@@ -33,7 +33,7 @@ router.post('/', requireRole('super_admin'), async (req, res) => {
       return error(res, 'Could not create product', 500)
     }
 
-    await supabase.from('audit_logs').insert({ user_id: req.user.id, action: 'create', entity_type: 'product', entity_id: product.id, new_value: product })
+    await req.db.from('audit_logs').insert({ user_id: req.user.id, action: 'create', entity_type: 'product', entity_id: product.id, new_value: product })
     return success(res, product, 'Product created')
   } catch (err) {
     return error(res, 'Server error', 500)
@@ -130,7 +130,7 @@ router.get('/branch/:branchId', async (req, res) => {
 
 router.get('/:id', async (req, res) => {
   try {
-    const { data, error: dbError } = await supabase.from('products').select('*').eq('id', req.params.id).single()
+    const { data, error: dbError } = await req.db.from('products').select('*').eq('id', req.params.id).single()
     if (dbError || !data) return error(res, 'Product not found', 404)
     return success(res, data, 'Product fetched')
   } catch (err) {
@@ -141,7 +141,7 @@ router.get('/:id', async (req, res) => {
 router.put('/:id', requireRole('super_admin'), async (req, res) => {
   try {
     const { id } = req.params
-    const { data: existing } = await supabase.from('products').select('*').eq('id', id).single()
+    const { data: existing } = await req.db.from('products').select('*').eq('id', id).single()
     if (!existing) return error(res, 'Product not found', 404)
 
     const allowed = ['name', 'category', 'drug_type', 'unit_of_measurement', 'weight', 'brand', 'barcode', 'price', 'wholesale_price', 'is_active']
@@ -150,10 +150,10 @@ router.put('/:id', requireRole('super_admin'), async (req, res) => {
     if (updates.drug_type === '') updates.drug_type = null
     updates.updated_at = new Date()
 
-    const { data: updated, error: dbError } = await supabase.from('products').update(updates).eq('id', id).select().single()
+    const { data: updated, error: dbError } = await req.db.from('products').update(updates).eq('id', id).select().single()
     if (dbError) return error(res, 'Could not update product', 500)
 
-    await supabase.from('audit_logs').insert({ user_id: req.user.id, action: 'update', entity_type: 'product', entity_id: id, old_value: existing, new_value: updated })
+    await req.db.from('audit_logs').insert({ user_id: req.user.id, action: 'update', entity_type: 'product', entity_id: id, old_value: existing, new_value: updated })
     return success(res, updated, 'Product updated')
   } catch (err) {
     return error(res, 'Server error', 500)
@@ -163,13 +163,13 @@ router.put('/:id', requireRole('super_admin'), async (req, res) => {
 router.delete('/:id', requireRole('super_admin'), async (req, res) => {
   try {
     const { id } = req.params
-    const { data: existing } = await supabase.from('products').select('*').eq('id', id).single()
+    const { data: existing } = await req.db.from('products').select('*').eq('id', id).single()
     if (!existing) return error(res, 'Product not found', 404)
 
-    const { data: updated, error: dbError } = await supabase.from('products').update({ is_active: false, updated_at: new Date() }).eq('id', id).select().single()
+    const { data: updated, error: dbError } = await req.db.from('products').update({ is_active: false, updated_at: new Date() }).eq('id', id).select().single()
     if (dbError) return error(res, 'Could not delete product', 500)
 
-    await supabase.from('audit_logs').insert({ user_id: req.user.id, action: 'delete', entity_type: 'product', entity_id: id, old_value: existing })
+    await req.db.from('audit_logs').insert({ user_id: req.user.id, action: 'delete', entity_type: 'product', entity_id: id, old_value: existing })
     return success(res, updated, 'Product deactivated')
   } catch (err) {
     return error(res, 'Server error', 500)
@@ -179,7 +179,7 @@ router.delete('/:id', requireRole('super_admin'), async (req, res) => {
 router.post('/:id/generate-barcode', requireRole('super_admin'), async (req, res) => {
   try {
     const { id } = req.params
-    const { data: existing } = await supabase.from('products').select('id').eq('id', id).single()
+    const { data: existing } = await req.db.from('products').select('id').eq('id', id).single()
     if (!existing) return error(res, 'Product not found', 404)
 
     function randomBarcode() {
@@ -191,12 +191,12 @@ router.post('/:id/generate-barcode', requireRole('super_admin'), async (req, res
     let barcode, attempts = 0
     while (attempts < 5) {
       barcode = randomBarcode()
-      const { data: clash } = await supabase.from('products').select('id').eq('barcode', barcode).maybeSingle()
+      const { data: clash } = await req.db.from('products').select('id').eq('barcode', barcode).maybeSingle()
       if (!clash) break
       attempts++
     }
 
-    const { data: updated, error: dbError } = await supabase.from('products').update({ barcode, updated_at: new Date() }).eq('id', id).select().single()
+    const { data: updated, error: dbError } = await req.db.from('products').update({ barcode, updated_at: new Date() }).eq('id', id).select().single()
     if (dbError) return error(res, 'Could not generate barcode', 500)
     return success(res, updated, 'Barcode generated')
   } catch (err) {
@@ -207,7 +207,7 @@ router.get('/:id/branches', async (req, res) => {
   try {
     const { id } = req.params
 
-    const { data: product } = await supabase.from('products').select('id').eq('id', id).single()
+    const { data: product } = await req.db.from('products').select('id').eq('id', id).single()
     if (!product) return error(res, 'Product not found', 404)
 
     const { data: branchProducts, error: dbError } = await supabase

@@ -136,14 +136,6 @@ function Login() {
           </form>
         </div>
 
-        {/* Customer Portal Link */}
-        <p className="text-center text-sm text-gray-500 mt-6">
-          Are you a customer?{' '}
-          <a href="/customer/login" className="text-green-600 font-medium hover:underline">
-            Login here
-          </a>
-        </p>
-
       </div>
     </div>
   )

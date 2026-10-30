@@ -8,7 +8,7 @@ router.use(requireAuth)
 
 router.get('/', async (req, res) => {
   try {
-    const { data, error: dbError } = await supabase.from('branches').select('*').order('name', { ascending: true })
+    const { data, error: dbError } = await req.db.from('branches').select('*').order('name', { ascending: true })
     if (dbError) return error(res, 'Could not fetch branches', 500)
     return success(res, data, 'Branches fetched')
   } catch (err) {
@@ -26,7 +26,7 @@ router.post('/', requireRole('super_admin', 'admin'), async (req, res) => {
 
     if (dbError) return error(res, 'Could not create branch', 500)
 
-    await supabase.from('audit_logs').insert({ user_id: req.user.id, action: 'create', entity_type: 'branch', entity_id: branch.id, new_value: branch })
+    await req.db.from('audit_logs').insert({ user_id: req.user.id, action: 'create', entity_type: 'branch', entity_id: branch.id, new_value: branch })
     return success(res, branch, 'Branch created')
   } catch (err) {
     return error(res, 'Server error', 500)
@@ -35,7 +35,7 @@ router.post('/', requireRole('super_admin', 'admin'), async (req, res) => {
 
 router.get('/:id', async (req, res) => {
   try {
-    const { data, error: dbError } = await supabase.from('branches').select('*').eq('id', req.params.id).single()
+    const { data, error: dbError } = await req.db.from('branches').select('*').eq('id', req.params.id).single()
     if (dbError || !data) return error(res, 'Branch not found', 404)
     return success(res, data, 'Branch fetched')
   } catch (err) {
@@ -46,7 +46,7 @@ router.get('/:id', async (req, res) => {
 router.put('/:id', requireRole('super_admin', 'admin'), async (req, res) => {
   try {
     const { id } = req.params
-    const { data: existing } = await supabase.from('branches').select('*').eq('id', id).single()
+    const { data: existing } = await req.db.from('branches').select('*').eq('id', id).single()
     if (!existing) return error(res, 'Branch not found', 404)
 
     const { name, address, phone, is_main, is_active } = req.body
@@ -57,10 +57,10 @@ router.put('/:id', requireRole('super_admin', 'admin'), async (req, res) => {
     if (is_main !== undefined) updates.is_main = is_main
     if (is_active !== undefined) updates.is_active = is_active
 
-    const { data: updated, error: dbError } = await supabase.from('branches').update(updates).eq('id', id).select().single()
+    const { data: updated, error: dbError } = await req.db.from('branches').update(updates).eq('id', id).select().single()
     if (dbError) return error(res, 'Could not update branch', 500)
 
-    await supabase.from('audit_logs').insert({ user_id: req.user.id, action: 'update', entity_type: 'branch', entity_id: id, old_value: existing, new_value: updated })
+    await req.db.from('audit_logs').insert({ user_id: req.user.id, action: 'update', entity_type: 'branch', entity_id: id, old_value: existing, new_value: updated })
     return success(res, updated, 'Branch updated')
   } catch (err) {
     return error(res, 'Server error', 500)
@@ -70,13 +70,13 @@ router.put('/:id', requireRole('super_admin', 'admin'), async (req, res) => {
 router.delete('/:id', requireRole('super_admin', 'admin'), async (req, res) => {
   try {
     const { id } = req.params
-    const { data: existing } = await supabase.from('branches').select('*').eq('id', id).single()
+    const { data: existing } = await req.db.from('branches').select('*').eq('id', id).single()
     if (!existing) return error(res, 'Branch not found', 404)
 
-    const { data: updated, error: dbError } = await supabase.from('branches').update({ is_active: false }).eq('id', id).select().single()
+    const { data: updated, error: dbError } = await req.db.from('branches').update({ is_active: false }).eq('id', id).select().single()
     if (dbError) return error(res, 'Could not delete branch', 500)
 
-    await supabase.from('audit_logs').insert({ user_id: req.user.id, action: 'delete', entity_type: 'branch', entity_id: id, old_value: existing })
+    await req.db.from('audit_logs').insert({ user_id: req.user.id, action: 'delete', entity_type: 'branch', entity_id: id, old_value: existing })
     return success(res, updated, 'Branch deactivated')
   } catch (err) {
     return error(res, 'Server error', 500)
@@ -92,10 +92,10 @@ router.post('/:id/products', requireRole('super_admin', 'admin'), async (req, re
     const { product_id, initial_stock, low_stock_threshold, cost_price, supplier_id } = req.body
     if (!product_id) return error(res, 'product_id is required')
 
-    const { data: branch } = await supabase.from('branches').select('id').eq('id', branch_id).single()
+    const { data: branch } = await req.db.from('branches').select('id').eq('id', branch_id).single()
     if (!branch) return error(res, 'Branch not found', 404)
 
-    const { data: product } = await supabase.from('products').select('id').eq('id', product_id).single()
+    const { data: product } = await req.db.from('products').select('id').eq('id', product_id).single()
     if (!product) return error(res, 'Product not found', 404)
 
     const { data, error: dbError } = await supabase
@@ -133,7 +133,7 @@ router.post('/:id/products', requireRole('super_admin', 'admin'), async (req, re
         .select().single()
 
       if (!receiptErr) {
-        await supabase.from('stock_receipt_items').insert({
+        await req.db.from('stock_receipt_items').insert({
           stock_receipt_id: receiptRow.id, product_id, quantity, cost_price
         })
         receipt = receiptRow
@@ -152,7 +152,7 @@ router.delete('/:id/products/:productId', requireRole('super_admin', 'admin'), a
     if (req.user.role !== 'super_admin' && branch_id !== req.user.branch_id) {
       return error(res, 'Unauthorized', 403)
     }
-    const { error: dbError } = await supabase.from('branch_products').update({ is_active: false }).eq('branch_id', branch_id).eq('product_id', product_id)
+    const { error: dbError } = await req.db.from('branch_products').update({ is_active: false }).eq('branch_id', branch_id).eq('product_id', product_id)
     if (dbError) return error(res, 'Could not remove product from branch', 500)
     return success(res, {}, 'Product removed from branch')
   } catch (err) {

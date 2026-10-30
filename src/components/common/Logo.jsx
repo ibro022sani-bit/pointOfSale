@@ -6,7 +6,7 @@ import { useState } from 'react'
  * nothing breaks, nothing needs to change here once you add the real file.
  *
  * Used everywhere the old hardcoded "SA" badge used to be: Landing, staff
- * Login, Customer Login/Register, and the Admin/Cashier/Customer sidebars —
+ * Login and the Admin/Cashier sidebars —
  * so the real logo will show up in all of those places automatically.
  */
 function Logo({ size = 36, showText = true, textClassName = '', subtitle }) {

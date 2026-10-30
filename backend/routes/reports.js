@@ -8,8 +8,8 @@ router.use(requireAuth)
 router.use(requireRole('super_admin', 'admin'))
 
 // Helper: weighted average cost per product, optionally scoped to one branch
-async function getAverageCosts(branch_id) {
-  let query = supabase.from('stock_receipt_items').select('product_id, quantity, cost_price, stock_receipts!inner(branch_id)')
+async function getAverageCosts(db, branch_id) {
+  let query = db.from('stock_receipt_items').select('product_id, quantity, cost_price, stock_receipts!inner(branch_id)')
   if (branch_id) query = query.eq('stock_receipts.branch_id', branch_id)
 
   const { data } = await query
@@ -31,7 +31,7 @@ router.get('/sales', async (req, res) => {
     let { date_from, date_to, branch_id } = req.query
     if (req.user.role !== 'super_admin') branch_id = req.user.branch_id
 
-    let query = supabase.from('sales').select('id, branch_id, total_amount, created_at, branches(name)').eq('status', 'completed')
+    let query = req.db.from('sales').select('id, branch_id, total_amount, created_at, branches(name)').eq('status', 'completed')
     if (branch_id) query = query.eq('branch_id', branch_id)
     if (date_from) query = query.gte('created_at', date_from)
     if (date_to) query = query.lte('created_at', date_to)
@@ -106,13 +106,13 @@ router.get('/stock', async (req, res) => {
     let { branch_id } = req.query
     if (req.user.role !== 'super_admin') branch_id = req.user.branch_id
 
-    let query = supabase.from('stock').select('*, products(name, category), branches(name)')
+    let query = req.db.from('stock').select('*, products(name, category), branches(name)')
     if (branch_id) query = query.eq('branch_id', branch_id)
 
     const { data: stockRows, error: dbError } = await query
     if (dbError) return error(res, 'Could not generate stock report', 500)
 
-    const averages = await getAverageCosts(branch_id)
+    const averages = await getAverageCosts(req.db, branch_id)
 
     let total_value = 0
     const items = stockRows.map(row => {
@@ -172,7 +172,7 @@ router.get('/expenses', async (req, res) => {
     let { date_from, date_to, branch_id } = req.query
     if (req.user.role !== 'super_admin') branch_id = req.user.branch_id
 
-    let query = supabase.from('expenses').select('*')
+    let query = req.db.from('expenses').select('*')
     if (branch_id) query = query.eq('branch_id', branch_id)
     if (date_from) query = query.gte('created_at', date_from)
     if (date_to) query = query.lte('created_at', date_to)
@@ -200,7 +200,7 @@ router.get('/profit-loss', async (req, res) => {
     let { date_from, date_to, branch_id } = req.query
     if (req.user.role !== 'super_admin') branch_id = req.user.branch_id
 
-    let saleQuery = supabase.from('sales').select('id, total_amount').eq('status', 'completed')
+    let saleQuery = req.db.from('sales').select('id, total_amount').eq('status', 'completed')
     if (branch_id) saleQuery = saleQuery.eq('branch_id', branch_id)
     if (date_from) saleQuery = saleQuery.gte('created_at', date_from)
     if (date_to) saleQuery = saleQuery.lte('created_at', date_to)
@@ -219,7 +219,7 @@ router.get('/profit-loss', async (req, res) => {
         .select('product_id, quantity, subtotal, products(name)')
         .in('sale_id', saleIds)
 
-      const averages = await getAverageCosts(branch_id)
+      const averages = await getAverageCosts(req.db, branch_id)
       cost_of_goods_sold = (saleItems || []).reduce((sum, item) => sum + (Number(item.quantity) * (averages[item.product_id] || 0)), 0)
 
       const productTotals = {}
@@ -242,7 +242,7 @@ router.get('/profit-loss', async (req, res) => {
       })).sort((a, b) => b.gross_profit - a.gross_profit)
     }
 
-    let expenseQuery = supabase.from('expenses').select('amount')
+    let expenseQuery = req.db.from('expenses').select('amount')
     if (branch_id) expenseQuery = expenseQuery.eq('branch_id', branch_id)
     if (date_from) expenseQuery = expenseQuery.gte('created_at', date_from)
     if (date_to) expenseQuery = expenseQuery.lte('created_at', date_to)

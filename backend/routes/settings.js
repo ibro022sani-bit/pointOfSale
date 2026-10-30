@@ -8,7 +8,7 @@ router.use(requireAuth)
 
 router.get('/bank-accounts', async (req, res) => {
   try {
-    const { data, error: dbError } = await supabase.from('bank_accounts').select('*').eq('is_active', true).order('created_at', { ascending: true })
+    const { data, error: dbError } = await req.db.from('bank_accounts').select('*').eq('is_active', true).order('created_at', { ascending: true })
     if (dbError) return error(res, 'Could not fetch bank accounts', 500)
     return success(res, data, 'Bank accounts fetched')
   } catch (err) {
@@ -40,7 +40,7 @@ router.put('/bank-accounts/:id', requireRole('super_admin', 'admin'), async (req
     const updates = {}
     for (const key of allowed) if (req.body[key] !== undefined) updates[key] = req.body[key]
 
-    const { data: updated, error: dbError } = await supabase.from('bank_accounts').update(updates).eq('id', id).select().single()
+    const { data: updated, error: dbError } = await req.db.from('bank_accounts').update(updates).eq('id', id).select().single()
     if (dbError) return error(res, 'Could not update bank account', 500)
     return success(res, updated, 'Bank account updated')
   } catch (err) {

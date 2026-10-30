@@ -15,7 +15,7 @@ async function confirmPayment(req, res, expectedMethod) {
     const { sale_id, reference, amount_paid } = req.body
     if (!sale_id) return error(res, 'sale_id is required')
 
-    const { data: sale } = await supabase.from('sales').select('*').eq('id', sale_id).single()
+    const { data: sale } = await req.db.from('sales').select('*').eq('id', sale_id).single()
     if (!sale) return error(res, 'Sale not found', 404)
 
     const isSplit = ['split', 'deposit'].includes(sale.payment_method)
@@ -58,7 +58,7 @@ async function confirmPayment(req, res, expectedMethod) {
 
     if (receiptErr) return error(res, 'Payment confirmed but could not load receipt', 500)
 
-    await supabase.from('audit_logs').insert({ user_id: req.user.id, action: 'confirm_payment', entity_type: 'payment', entity_id: payment.id, new_value: payment })
+    await req.db.from('audit_logs').insert({ user_id: req.user.id, action: 'confirm_payment', entity_type: 'payment', entity_id: payment.id, new_value: payment })
 
     return success(res, { payment, sale: receipt }, 'Payment confirmed')
   } catch (err) {
@@ -82,21 +82,21 @@ router.post('/deposit/confirm', async (req, res) => {
 
     const effectiveBranchId = req.user.role === 'super_admin' ? (branch_id || null) : req.user.branch_id
 
-    const { data: sale } = await supabase.from('sales').select('*').eq('id', sale_id).single()
+    const { data: sale } = await req.db.from('sales').select('*').eq('id', sale_id).single()
     if (!sale) return error(res, 'Sale not found', 404)
     if (sale.payment_status === 'paid') return error(res, 'This sale has already been paid')
     if (!sale.customer_id) return error(res, 'This sale has no customer attached — cannot pay via deposit')
 
-    const { data: account } = await supabase.from('deposit_accounts').select('*').eq('customer_id', sale.customer_id).maybeSingle()
+    const { data: account } = await req.db.from('deposit_accounts').select('*').eq('customer_id', sale.customer_id).maybeSingle()
     if (!account) return error(res, 'This customer has no deposit account')
     if (Number(amount) > Number(account.current_balance)) return error(res, "Amount exceeds the customer's deposit balance")
 
     const newBalance = Number(account.current_balance) - Number(amount)
 
-    const { error: balErr } = await supabase.from('deposit_accounts').update({ current_balance: newBalance }).eq('id', account.id)
+    const { error: balErr } = await req.db.from('deposit_accounts').update({ current_balance: newBalance }).eq('id', account.id)
     if (balErr) return error(res, 'Could not update deposit balance', 500)
 
-    await supabase.from('deposit_transactions').insert({
+    await req.db.from('deposit_transactions').insert({
       deposit_account_id: account.id, type: 'deposit_out', amount, sale_id, balance_after: newBalance, note: null, confirmed_by: req.user.id, branch_id: effectiveBranchId
     })
 
@@ -119,7 +119,7 @@ router.post('/deposit/confirm', async (req, res) => {
       updatedSale = fullyPaidSale
     }
 
-    await supabase.from('audit_logs').insert({ user_id: req.user.id, action: 'confirm_payment', entity_type: 'payment', entity_id: payment.id, new_value: payment })
+    await req.db.from('audit_logs').insert({ user_id: req.user.id, action: 'confirm_payment', entity_type: 'payment', entity_id: payment.id, new_value: payment })
 
     return success(res, { payment, sale: updatedSale, deposit_balance: newBalance },
       hasTopUp ? 'Deposit portion confirmed — top-up payment still required' : 'Payment confirmed')

@@ -15,10 +15,10 @@ router.post('/:id/deposit/add', requireRole('super_admin', 'admin', 'cashier'), 
 
 const effectiveBranchId = req.user.role === 'super_admin' ? (branch_id || null) : req.user.branch_id
 
-    const { data: customer } = await supabase.from('customers').select('id').eq('id', customer_id).single()
+    const { data: customer } = await req.db.from('customers').select('id').eq('id', customer_id).single()
     if (!customer) return error(res, 'Customer not found', 404)
 
-    let { data: account } = await supabase.from('deposit_accounts').select('*').eq('customer_id', customer_id).maybeSingle()
+    let { data: account } = await req.db.from('deposit_accounts').select('*').eq('customer_id', customer_id).maybeSingle()
 
     if (!account) {
       const { data: newAccount, error: openErr } = await supabase
@@ -36,12 +36,12 @@ const effectiveBranchId = req.user.role === 'super_admin' ? (branch_id || null) 
 
     if (dbError) return error(res, 'Could not update deposit balance', 500)
 
-    await supabase.from('deposit_transactions').insert({
+    await req.db.from('deposit_transactions').insert({
       deposit_account_id: account.id, type: 'deposit_in', amount, payment_method, reference: reference || null,
       confirmed_by: req.user.id, balance_after: newBalance, branch_id: effectiveBranchId
     })
 
-    await supabase.from('audit_logs').insert({
+    await req.db.from('audit_logs').insert({
       user_id: req.user.id, action: 'deposit_add', entity_type: 'deposit_account', entity_id: account.id, new_value: { amount, newBalance }
     })
 
@@ -54,11 +54,9 @@ router.get('/:id/deposit/transactions', async (req, res) => {
   try {
     const { id: customer_id } = req.params
 
-    const isSelf = req.user.role === 'customer' && req.user.id === customer_id
-    const isStaff = ['super_admin', 'admin', 'cashier'].includes(req.user.role)
-    if (!isSelf && !isStaff) return error(res, 'Unauthorized', 403)
+    if (!['super_admin', 'admin', 'cashier'].includes(req.user.role)) return error(res, 'Unauthorized', 403)
 
-    const { data: account } = await supabase.from('deposit_accounts').select('id').eq('customer_id', customer_id).maybeSingle()
+    const { data: account } = await req.db.from('deposit_accounts').select('id').eq('customer_id', customer_id).maybeSingle()
     if (!account) return success(res, [], 'No deposit account exists yet')
 
     const { data, error: dbError } = await supabase
@@ -83,10 +81,10 @@ router.post('/:id/deposit/adjust', requireRole('super_admin', 'admin'), async (r
     if (!amount || amount <= 0) return error(res, 'A valid amount is required')
     const effectiveBranchId = req.user.role === 'super_admin' ? (branch_id || null) : req.user.branch_id
 
-    const { data: customer } = await supabase.from('customers').select('id').eq('id', customer_id).single()
+    const { data: customer } = await req.db.from('customers').select('id').eq('id', customer_id).single()
     if (!customer) return error(res, 'Customer not found', 404)
 
-    let { data: account } = await supabase.from('deposit_accounts').select('*').eq('customer_id', customer_id).maybeSingle()
+    let { data: account } = await req.db.from('deposit_accounts').select('*').eq('customer_id', customer_id).maybeSingle()
 
     if (!account) {
       const { data: newAccount, error: openErr } = await supabase
@@ -104,12 +102,12 @@ router.post('/:id/deposit/adjust', requireRole('super_admin', 'admin'), async (r
 
     if (dbError) return error(res, 'Could not adjust balance', 500)
 
-    await supabase.from('deposit_transactions').insert({
+    await req.db.from('deposit_transactions').insert({
       deposit_account_id: account.id, type: 'deposit_in', amount, note: note || null,
       confirmed_by: req.user.id, balance_after: newBalance, branch_id: effectiveBranchId
     })
 
-    await supabase.from('audit_logs').insert({
+    await req.db.from('audit_logs').insert({
       user_id: req.user.id, action: 'manual_deposit_adjustment', entity_type: 'deposit_account', entity_id: account.id, new_value: { amount, note: note || null, newBalance }
     })
 

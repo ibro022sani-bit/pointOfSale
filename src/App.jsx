@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { useEffect } from 'react'
 import Landing from './pages/Landing'
 import Login from './pages/auth/Login'
@@ -12,9 +12,6 @@ import Branches from './pages/admin/Branches'
 import Suppliers from './pages/admin/Suppliers'
 import Staff from './pages/admin/Staff'
 import useAuthStore from './store/authStore'
-import CustomerLogin from './pages/customer/Login'
-import CustomerRegister from './pages/customer/Register'
-import CustomerLayout from './pages/customer/CustomerLayout'
 import useBranchStore from './store/branchStore'
 import Stock from './pages/admin/Stock'
 import SalesHistory from './pages/admin/SalesHistory'
@@ -35,8 +32,6 @@ import ExpenseReport from './pages/admin/reports/ExpenseReport'
 import ProfitLossReport from './pages/admin/reports/ProfitLossReport'
 import SupplierDebtSummary from './pages/admin/reports/SupplierDebtSummary'
 import CustomerReport from './pages/admin/reports/CustomerReport'
-import Balance from './pages/customer/Balance'
-import ProfileEdit from './pages/customer/ProfileEdit'
 
 function ComingSoon({ title }) {
   return (
@@ -65,33 +60,19 @@ function CashierPage({ children, title }) {
   )
 }
 
-function CustomerPortalPage({ children, title }) {
-  return (
-    <CustomerLayout>
-      {children || <ComingSoon title={title} />}
-    </CustomerLayout>
-  )
-}
-
 // Guards a route by role. `allowed` is an array of roles permitted here.
 // Not logged in -> /login. Logged in but wrong role -> their own dashboard.
 function dashboardPathFor(user) {
-  return user?.role === 'cashier'
-    ? '/cashier/dashboard'
-    : user?.role === 'customer'
-      ? '/customer/balance'
-      : '/admin/dashboard'
+  return user?.role === 'cashier' ? '/cashier/dashboard' : '/admin/dashboard'
 }
 
 function ProtectedRoute({ allowed, requireMainBranch, children }) {
   const { user, isAuthenticated, defaultBranchId } = useAuthStore()
-  const location = useLocation()
   const isMainBranchUser = useBranchStore((state) => state.isMainBranchUser)
   const branchesLoaded = useBranchStore((state) => state.loaded)
 
   if (!isAuthenticated) {
-    const loginPath = location.pathname.startsWith('/customer') ? '/customer/login' : '/login'
-    return <Navigate to={loginPath} replace />
+    return <Navigate to="/login" replace />
   }
 
   const fallback = dashboardPathFor(user)
@@ -147,10 +128,7 @@ function App() {
   }, [])
 
   useEffect(() => {
-    // Branches are a staff/business concept — customers have no branch_id
-    // and /api/branches rejects their token, which was silently logging
-    // every customer back out immediately after they signed in.
-    if (isAuthenticated && userRole !== 'customer') {
+    if (isAuthenticated) {
       fetchBranches()
     }
   }, [isAuthenticated, userRole])
@@ -160,16 +138,6 @@ function App() {
       <Routes>
         <Route path="/" element={<RootRoute />} />
         <Route path="/login" element={<PublicOnlyRoute><Login /></PublicOnlyRoute>} />
-        <Route path="/customer/login" element={<PublicOnlyRoute><CustomerLogin /></PublicOnlyRoute>} />
-        <Route path="/customer/register" element={<PublicOnlyRoute><CustomerRegister /></PublicOnlyRoute>} />
-
-        <Route path="/customer/dashboard" element={<Navigate to="/customer/balance" replace />} />
-                <Route path="/customer/balance" element={
-          <ProtectedRoute allowed={['customer']}><CustomerPortalPage><Balance /></CustomerPortalPage></ProtectedRoute>
-        } />
-        <Route path="/customer/profile" element={
-          <ProtectedRoute allowed={['customer']}><CustomerPortalPage><ProfileEdit /></CustomerPortalPage></ProtectedRoute>
-        } />
 
         {/* Admin + Super Admin Routes */}
         <Route path="/admin/dashboard" element={

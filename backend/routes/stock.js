@@ -31,7 +31,7 @@ router.put('/branch/:branchId/product/:productId', requireRole('super_admin', 'a
     const { branchId, productId } = req.params
     const { quantity, low_stock_threshold } = req.body
 
-    const { data: existing } = await supabase.from('stock').select('*').eq('branch_id', branchId).eq('product_id', productId).single()
+    const { data: existing } = await req.db.from('stock').select('*').eq('branch_id', branchId).eq('product_id', productId).single()
     if (!existing) return error(res, 'Stock record not found for this branch/product', 404)
 
     const updates = { updated_at: new Date() }
@@ -43,7 +43,7 @@ router.put('/branch/:branchId/product/:productId', requireRole('super_admin', 'a
 
     if (dbError) return error(res, 'Could not update stock', 500)
 
-    await supabase.from('audit_logs').insert({
+    await req.db.from('audit_logs').insert({
       user_id: req.user.id, action: 'update', entity_type: 'stock', entity_id: updated.id, old_value: existing, new_value: updated
     })
 
@@ -58,7 +58,7 @@ router.get('/low-stock', async (req, res) => {
     let { branch } = req.query
     if (req.user.role !== 'super_admin') branch = req.user.branch_id
 
-    let query = supabase.from('stock').select('*, products(id, name, category, unit_of_measurement), branches(id, name)')
+    let query = req.db.from('stock').select('*, products(id, name, category, unit_of_measurement), branches(id, name)')
     if (branch) query = query.eq('branch_id', branch)
 
     const { data, error: dbError } = await query
@@ -116,7 +116,7 @@ router.post('/restock', requireRole('super_admin', 'admin'), async (req, res) =>
         .select().single()
 
       if (amountPaid > 0 && !receiptErr) {
-        await supabase.from('stock_receipt_payments').insert({
+        await req.db.from('stock_receipt_payments').insert({
           stock_receipt_id: receipt.id, amount: amountPaid, payment_method: 'cash', paid_by: req.user.id
         })
       }
@@ -124,22 +124,22 @@ router.post('/restock', requireRole('super_admin', 'admin'), async (req, res) =>
     if (receiptErr) return error(res, 'Could not create stock receipt', 500)
 
     const itemRows = items.map(i => ({ stock_receipt_id: receipt.id, product_id: i.product_id, quantity: i.quantity, cost_price: i.cost_price }))
-    const { error: itemsErr } = await supabase.from('stock_receipt_items').insert(itemRows)
+    const { error: itemsErr } = await req.db.from('stock_receipt_items').insert(itemRows)
     if (itemsErr) return error(res, 'Could not save receipt items', 500)
 
     for (const item of items) {
-      const { data: existingStock } = await supabase.from('stock').select('*').eq('branch_id', branch_id).eq('product_id', item.product_id).maybeSingle()
+      const { data: existingStock } = await req.db.from('stock').select('*').eq('branch_id', branch_id).eq('product_id', item.product_id).maybeSingle()
 
       if (existingStock) {
-        await supabase.from('stock').update({ quantity: Number(existingStock.quantity) + Number(item.quantity), updated_at: new Date() }).eq('id', existingStock.id)
+        await req.db.from('stock').update({ quantity: Number(existingStock.quantity) + Number(item.quantity), updated_at: new Date() }).eq('id', existingStock.id)
       } else {
-        await supabase.from('stock').insert({ branch_id, product_id: item.product_id, quantity: item.quantity })
+        await req.db.from('stock').insert({ branch_id, product_id: item.product_id, quantity: item.quantity })
       }
 
-      await supabase.from('branch_products').upsert({ branch_id, product_id: item.product_id, is_active: true }, { onConflict: 'branch_id,product_id' })
+      await req.db.from('branch_products').upsert({ branch_id, product_id: item.product_id, is_active: true }, { onConflict: 'branch_id,product_id' })
     }
 
-    await supabase.from('audit_logs').insert({ user_id: req.user.id, action: 'create', entity_type: 'stock_receipt', entity_id: receipt.id, new_value: receipt })
+    await req.db.from('audit_logs').insert({ user_id: req.user.id, action: 'create', entity_type: 'stock_receipt', entity_id: receipt.id, new_value: receipt })
     return success(res, { ...receipt, items }, 'Stock received and updated')
   } catch (err) {
     return error(res, 'Server error', 500)
@@ -153,7 +153,7 @@ router.post('/restock/:id/pay', requireRole('super_admin', 'admin'), async (req,
     if (!amount || amount <= 0) return error(res, 'A valid amount is required')
     if (!payment_method) return error(res, 'payment_method is required')
 
-    const { data: receiptRow } = await supabase.from('stock_receipts').select('*').eq('id', id).single()
+    const { data: receiptRow } = await req.db.from('stock_receipts').select('*').eq('id', id).single()
     if (!receiptRow) return error(res, 'Stock receipt not found', 404)
 
     const outstanding = Number(receiptRow.total_cost) - Number(receiptRow.amount_paid)
@@ -169,11 +169,11 @@ router.post('/restock/:id/pay', requireRole('super_admin', 'admin'), async (req,
 
     if (dbError) return error(res, 'Could not record payment', 500)
 
-    await supabase.from('stock_receipt_payments').insert({
+    await req.db.from('stock_receipt_payments').insert({
       stock_receipt_id: id, amount, payment_method, reference: reference || null, paid_by: req.user.id
     })
 
-    await supabase.from('audit_logs').insert({ user_id: req.user.id, action: 'pay_supplier', entity_type: 'stock_receipt', entity_id: id, new_value: { amount, newAmountPaid } })
+    await req.db.from('audit_logs').insert({ user_id: req.user.id, action: 'pay_supplier', entity_type: 'stock_receipt', entity_id: id, new_value: { amount, newAmountPaid } })
 
     return success(res, updated, 'Supplier payment recorded')
   } catch (err) {
@@ -191,10 +191,10 @@ router.put('/restock/:id/items/:itemId', requireRole('super_admin'), async (req,
     if (quantity !== undefined && Number(quantity) <= 0) return error(res, 'quantity must be greater than 0')
     if (cost_price !== undefined && Number(cost_price) < 0) return error(res, 'cost_price cannot be negative')
 
-    const { data: item } = await supabase.from('stock_receipt_items').select('*').eq('id', itemId).eq('stock_receipt_id', id).single()
+    const { data: item } = await req.db.from('stock_receipt_items').select('*').eq('id', itemId).eq('stock_receipt_id', id).single()
     if (!item) return error(res, 'Restock item not found', 404)
 
-    const { data: receipt } = await supabase.from('stock_receipts').select('*').eq('id', id).single()
+    const { data: receipt } = await req.db.from('stock_receipts').select('*').eq('id', id).single()
     if (!receipt) return error(res, 'Stock receipt not found', 404)
 
     const newQuantity = quantity !== undefined ? Number(quantity) : Number(item.quantity)
@@ -202,7 +202,7 @@ router.put('/restock/:id/items/:itemId', requireRole('super_admin'), async (req,
     const quantityDelta = newQuantity - Number(item.quantity)
 
     if (quantityDelta !== 0 && receipt.branch_id) {
-      const { data: stockRow } = await supabase.from('stock').select('*').eq('branch_id', receipt.branch_id).eq('product_id', item.product_id).maybeSingle()
+      const { data: stockRow } = await req.db.from('stock').select('*').eq('branch_id', receipt.branch_id).eq('product_id', item.product_id).maybeSingle()
       const currentQty = Number(stockRow?.quantity || 0)
       const adjustedQty = currentQty + quantityDelta
 
@@ -211,7 +211,7 @@ router.put('/restock/:id/items/:itemId', requireRole('super_admin'), async (req,
       }
 
       if (stockRow) {
-        await supabase.from('stock').update({ quantity: adjustedQty, updated_at: new Date() }).eq('id', stockRow.id)
+        await req.db.from('stock').update({ quantity: adjustedQty, updated_at: new Date() }).eq('id', stockRow.id)
       }
     }
 
@@ -222,7 +222,7 @@ router.put('/restock/:id/items/:itemId', requireRole('super_admin'), async (req,
 
     if (itemErr) return error(res, 'Could not update restock item', 500)
 
-    const { data: allItems } = await supabase.from('stock_receipt_items').select('quantity, cost_price').eq('stock_receipt_id', id)
+    const { data: allItems } = await req.db.from('stock_receipt_items').select('quantity, cost_price').eq('stock_receipt_id', id)
     const newTotalCost = (allItems || []).reduce((sum, i) => sum + Number(i.quantity) * Number(i.cost_price), 0)
     const newPaymentStatus = Number(receipt.amount_paid) >= newTotalCost
       ? 'paid'
@@ -235,7 +235,7 @@ router.put('/restock/:id/items/:itemId', requireRole('super_admin'), async (req,
 
     if (receiptErr) return error(res, 'Could not update receipt total', 500)
 
-    await supabase.from('audit_logs').insert({
+    await req.db.from('audit_logs').insert({
       user_id: req.user.id, action: 'correct_restock_item', entity_type: 'stock_receipt_item', entity_id: itemId,
       old_value: item, new_value: updatedItem
     })
@@ -283,7 +283,7 @@ router.post('/restock/opening-balance', requireRole('super_admin'), async (req, 
     if (!supplier_id) return error(res, 'supplier_id is required')
     if (!total_cost || total_cost <= 0) return error(res, 'A valid total_cost is required')
 
-    const { data: supplier } = await supabase.from('suppliers').select('id').eq('id', supplier_id).single()
+    const { data: supplier } = await req.db.from('suppliers').select('id').eq('id', supplier_id).single()
     if (!supplier) return error(res, 'Supplier not found', 404)
 
     const amountPaid = amount_paid_now ? Number(amount_paid_now) : 0
@@ -300,12 +300,12 @@ router.post('/restock/opening-balance', requireRole('super_admin'), async (req, 
     if (receiptErr) return error(res, 'Could not record opening balance', 500)
 
     if (amountPaid > 0) {
-      await supabase.from('stock_receipt_payments').insert({
+      await req.db.from('stock_receipt_payments').insert({
         stock_receipt_id: receipt.id, amount: amountPaid, payment_method: 'cash', paid_by: req.user.id
       })
     }
 
-    await supabase.from('audit_logs').insert({ user_id: req.user.id, action: 'create_opening_balance', entity_type: 'stock_receipt', entity_id: receipt.id, new_value: receipt })
+    await req.db.from('audit_logs').insert({ user_id: req.user.id, action: 'create_opening_balance', entity_type: 'stock_receipt', entity_id: receipt.id, new_value: receipt })
 
     return success(res, receipt, 'Opening balance recorded')
   } catch (err) {
@@ -344,7 +344,7 @@ router.post('/transfer', async (req, res) => {
     if (!Array.isArray(items) || items.length === 0) return error(res, 'items array is required')
 
     for (const item of items) {
-      const { data: stockRow } = await supabase.from('stock').select('quantity').eq('branch_id', from_branch_id).eq('product_id', item.product_id).single()
+      const { data: stockRow } = await req.db.from('stock').select('quantity').eq('branch_id', from_branch_id).eq('product_id', item.product_id).single()
       if (!stockRow || Number(stockRow.quantity) < Number(item.quantity)) {
         return error(res, `Insufficient stock for product ${item.product_id} at source branch`)
       }
@@ -356,14 +356,14 @@ router.post('/transfer', async (req, res) => {
     if (transferErr) return error(res, 'Could not create transfer', 500)
 
     const itemRows = items.map(i => ({ transfer_id: transfer.id, product_id: i.product_id, quantity: i.quantity }))
-    await supabase.from('stock_transfer_items').insert(itemRows)
+    await req.db.from('stock_transfer_items').insert(itemRows)
 
     for (const item of items) {
-      const { data: stockRow } = await supabase.from('stock').select('*').eq('branch_id', from_branch_id).eq('product_id', item.product_id).single()
-      await supabase.from('stock').update({ quantity: Number(stockRow.quantity) - Number(item.quantity), updated_at: new Date() }).eq('id', stockRow.id)
+      const { data: stockRow } = await req.db.from('stock').select('*').eq('branch_id', from_branch_id).eq('product_id', item.product_id).single()
+      await req.db.from('stock').update({ quantity: Number(stockRow.quantity) - Number(item.quantity), updated_at: new Date() }).eq('id', stockRow.id)
     }
 
-    await supabase.from('audit_logs').insert({ user_id: req.user.id, action: 'create', entity_type: 'stock_transfer', entity_id: transfer.id, new_value: transfer })
+    await req.db.from('audit_logs').insert({ user_id: req.user.id, action: 'create', entity_type: 'stock_transfer', entity_id: transfer.id, new_value: transfer })
     return success(res, { ...transfer, items }, 'Transfer created, stock reserved from source branch')
   } catch (err) {
     return error(res, 'Server error', 500)
@@ -373,7 +373,7 @@ router.post('/transfer', async (req, res) => {
 router.put('/transfer/:id/approve', requireRole('super_admin', 'admin'), async (req, res) => {
   try {
     const { id } = req.params
-    const { data: transfer } = await supabase.from('stock_transfers').select('*').eq('id', id).single()
+    const { data: transfer } = await req.db.from('stock_transfers').select('*').eq('id', id).single()
     if (!transfer) return error(res, 'Transfer not found', 404)
     if (transfer.status !== 'pending') return error(res, `Transfer is already ${transfer.status}`)
 
@@ -382,7 +382,7 @@ router.put('/transfer/:id/approve', requireRole('super_admin', 'admin'), async (
 
     if (dbError) return error(res, 'Could not approve transfer', 500)
 
-    await supabase.from('audit_logs').insert({ user_id: req.user.id, action: 'approve', entity_type: 'stock_transfer', entity_id: id, old_value: transfer, new_value: updated })
+    await req.db.from('audit_logs').insert({ user_id: req.user.id, action: 'approve', entity_type: 'stock_transfer', entity_id: id, old_value: transfer, new_value: updated })
     return success(res, updated, 'Transfer approved')
   } catch (err) {
     return error(res, 'Server error', 500)
@@ -392,27 +392,27 @@ router.put('/transfer/:id/approve', requireRole('super_admin', 'admin'), async (
 router.put('/transfer/:id/receive', async (req, res) => {
   try {
     const { id } = req.params
-    const { data: transfer } = await supabase.from('stock_transfers').select('*, stock_transfer_items(*)').eq('id', id).single()
+    const { data: transfer } = await req.db.from('stock_transfers').select('*, stock_transfer_items(*)').eq('id', id).single()
 
     if (!transfer) return error(res, 'Transfer not found', 404)
     if (transfer.status !== 'approved') return error(res, 'Transfer must be approved before it can be received')
 
     for (const item of transfer.stock_transfer_items) {
-      const { data: existingStock } = await supabase.from('stock').select('*').eq('branch_id', transfer.to_branch_id).eq('product_id', item.product_id).maybeSingle()
+      const { data: existingStock } = await req.db.from('stock').select('*').eq('branch_id', transfer.to_branch_id).eq('product_id', item.product_id).maybeSingle()
 
       if (existingStock) {
-        await supabase.from('stock').update({ quantity: Number(existingStock.quantity) + Number(item.quantity), updated_at: new Date() }).eq('id', existingStock.id)
+        await req.db.from('stock').update({ quantity: Number(existingStock.quantity) + Number(item.quantity), updated_at: new Date() }).eq('id', existingStock.id)
       } else {
-        await supabase.from('stock').insert({ branch_id: transfer.to_branch_id, product_id: item.product_id, quantity: item.quantity })
+        await req.db.from('stock').insert({ branch_id: transfer.to_branch_id, product_id: item.product_id, quantity: item.quantity })
       }
 
-      await supabase.from('branch_products').upsert({ branch_id: transfer.to_branch_id, product_id: item.product_id, is_active: true }, { onConflict: 'branch_id,product_id' })
+      await req.db.from('branch_products').upsert({ branch_id: transfer.to_branch_id, product_id: item.product_id, is_active: true }, { onConflict: 'branch_id,product_id' })
     }
 
-    const { data: updated, error: dbError } = await supabase.from('stock_transfers').update({ status: 'received' }).eq('id', id).select().single()
+    const { data: updated, error: dbError } = await req.db.from('stock_transfers').update({ status: 'received' }).eq('id', id).select().single()
     if (dbError) return error(res, 'Could not mark transfer as received', 500)
 
-    await supabase.from('audit_logs').insert({ user_id: req.user.id, action: 'receive', entity_type: 'stock_transfer', entity_id: id, old_value: transfer, new_value: updated })
+    await req.db.from('audit_logs').insert({ user_id: req.user.id, action: 'receive', entity_type: 'stock_transfer', entity_id: id, old_value: transfer, new_value: updated })
     return success(res, updated, 'Transfer received, stock updated at destination branch')
   } catch (err) {
     return error(res, 'Server error', 500)

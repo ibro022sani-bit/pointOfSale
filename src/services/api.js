@@ -31,8 +31,7 @@ api.interceptors.response.use(
     if (error.response?.status === 401 && !isAuthAttempt && !isStaleRequest) {
       localStorage.removeItem('token')
       localStorage.removeItem('user')
-      const onCustomerSide = window.location.pathname.startsWith('/customer')
-      window.location.href = onCustomerSide ? '/customer/login' : '/login'
+      window.location.href = '/login'
     }
     return Promise.reject(error)
   }

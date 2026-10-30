@@ -13,7 +13,7 @@ router.post('/sms/bulk', requireRole('super_admin'), async (req, res) => {
     if (!Array.isArray(customer_ids) || customer_ids.length === 0) return error(res, 'customer_ids array is required')
     if (!message || !message.trim()) return error(res, 'message is required')
 
-    const { data: customers } = await supabase.from('customers').select('id, name, phone').in('id', customer_ids)
+    const { data: customers } = await req.db.from('customers').select('id, name, phone').in('id', customer_ids)
 
     const results = []
     for (const customerId of customer_ids) {
@@ -29,7 +29,7 @@ router.post('/sms/bulk', requireRole('super_admin'), async (req, res) => {
 
       const sent = await sendSMS(customer.phone, message)
 
-      await supabase.from('notifications').insert({
+      await req.db.from('notifications').insert({
         type: 'bulk_reminder', recipient_type: 'customer', recipient_id: customerId,
         message, channel: 'sms', status: sent ? 'sent' : 'failed'
       })

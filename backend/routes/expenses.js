@@ -45,7 +45,7 @@ router.post('/', async (req, res) => {
 
     if (dbError) return error(res, 'Could not record expense', 500)
 
-    await supabase.from('audit_logs').insert({ user_id: req.user.id, action: 'create', entity_type: 'expense', entity_id: expense.id, new_value: expense })
+    await req.db.from('audit_logs').insert({ user_id: req.user.id, action: 'create', entity_type: 'expense', entity_id: expense.id, new_value: expense })
     return success(res, expense, 'Expense recorded')
   } catch (err) {
     return error(res, 'Server error', 500)
@@ -72,17 +72,17 @@ router.get('/:id', async (req, res) => {
 router.delete('/:id', async (req, res) => {
   try {
     const { id } = req.params
-    const { data: existing } = await supabase.from('expenses').select('*').eq('id', id).single()
+    const { data: existing } = await req.db.from('expenses').select('*').eq('id', id).single()
     if (!existing) return error(res, 'Expense not found', 404)
 
     if (req.user.role !== 'super_admin' && existing.branch_id !== req.user.branch_id) {
       return error(res, 'Unauthorized', 403)
     }
 
-    const { error: dbError } = await supabase.from('expenses').delete().eq('id', id)
+    const { error: dbError } = await req.db.from('expenses').delete().eq('id', id)
     if (dbError) return error(res, 'Could not delete expense', 500)
 
-    await supabase.from('audit_logs').insert({ user_id: req.user.id, action: 'delete', entity_type: 'expense', entity_id: id, old_value: existing })
+    await req.db.from('audit_logs').insert({ user_id: req.user.id, action: 'delete', entity_type: 'expense', entity_id: id, old_value: existing })
     return success(res, {}, 'Expense deleted')
   } catch (err) {
     return error(res, 'Server error', 500)
