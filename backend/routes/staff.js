@@ -39,13 +39,13 @@ router.post('/', async (req, res) => {
       finalBranchId = req.user.branch_id
     }
 
-    const { data: existing } = await req.db.from('users').select('id').eq('email', email).maybeSingle()
+    const { data: existing } = await supabase.from('users').select('id').eq('email', email.trim().toLowerCase()).maybeSingle()
     if (existing) return error(res, 'A staff account with this email already exists')
 
     const hashedPassword = await bcrypt.hash(password, 10)
     const { data: user, error: dbError } = await supabase
       .from('users')
-      .insert({ name, email, phone: phone || null, password: hashedPassword, role, branch_id: finalBranchId || null })
+      .insert({ name, email: email.trim().toLowerCase(), phone: phone || null, password: hashedPassword, role, branch_id: finalBranchId || null })
       .select('id, name, email, phone, role, branch_id, is_active, created_at').single()
 
     if (dbError) return error(res, 'Could not create staff account', 500)

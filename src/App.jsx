@@ -2,6 +2,8 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { useEffect } from 'react'
 import Landing from './pages/Landing'
 import Login from './pages/auth/Login'
+import Signup from './pages/auth/Signup'
+import Tenants from './pages/platform/Tenants'
 import AdminLayout from './components/common/AdminLayout'
 import CashierLayout from './components/common/CashierLayout'
 import Dashboard from './pages/admin/Dashboard'
@@ -63,6 +65,7 @@ function CashierPage({ children, title }) {
 // Guards a route by role. `allowed` is an array of roles permitted here.
 // Not logged in -> /login. Logged in but wrong role -> their own dashboard.
 function dashboardPathFor(user) {
+  if (user?.role === 'platform_admin') return '/platform'
   return user?.role === 'cashier' ? '/cashier/dashboard' : '/admin/dashboard'
 }
 
@@ -129,7 +132,7 @@ function App() {
 
   useEffect(() => {
     if (isAuthenticated) {
-      fetchBranches()
+      if (userRole !== 'platform_admin') fetchBranches()
     }
   }, [isAuthenticated, userRole])
 
@@ -138,6 +141,8 @@ function App() {
       <Routes>
         <Route path="/" element={<RootRoute />} />
         <Route path="/login" element={<PublicOnlyRoute><Login /></PublicOnlyRoute>} />
+        <Route path="/signup" element={<PublicOnlyRoute><Signup /></PublicOnlyRoute>} />
+        <Route path="/platform" element={<ProtectedRoute allowed={['platform_admin']}><Tenants /></ProtectedRoute>} />
 
         {/* Admin + Super Admin Routes */}
         <Route path="/admin/dashboard" element={

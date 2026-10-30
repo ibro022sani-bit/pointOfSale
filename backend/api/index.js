@@ -17,12 +17,14 @@ import expenseRoutes from '../routes/expenses.js'
 import reportRoutes from '../routes/reports.js'
 import notificationRoutes from '../routes/notifications.js'
 import depositRoutes from '../routes/deposits.js'
+import platformRoutes from '../routes/platform.js'
 
 const app = express()
 app.use(cors())
 app.use(express.json())
 
 app.use('/api/auth', authRoutes)
+app.use('/api/platform', platformRoutes)
 app.use('/api/staff', staffRoutes)
 app.use('/api/customers', customerRoutes)
 app.use('/api/customers', creditRoutes)

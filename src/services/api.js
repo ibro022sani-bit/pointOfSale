@@ -28,7 +28,9 @@ api.interceptors.response.use(
     const currentToken = localStorage.getItem('token')
     const isStaleRequest = requestToken && requestToken !== currentToken
 
-    if (error.response?.status === 401 && !isAuthAttempt && !isStaleRequest) {
+    const inactive = error.response?.status === 403 && error.response?.data?.code === 'ACCOUNT_INACTIVE'
+    if ((error.response?.status === 401 || inactive) && !isAuthAttempt && !isStaleRequest) {
+      if (inactive) sessionStorage.setItem('loginNotice', error.response.data.message)
       localStorage.removeItem('token')
       localStorage.removeItem('user')
       window.location.href = '/login'

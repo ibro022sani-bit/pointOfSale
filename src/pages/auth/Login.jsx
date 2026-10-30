@@ -5,7 +5,7 @@ import { z } from 'zod'
 import { Eye, EyeOff, LogIn } from 'lucide-react'
 import toast from 'react-hot-toast'
 import useAuthStore from '../../store/authStore'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { staffLogin } from '../../services/authService'
 import Logo from '../../components/common/Logo'
 
@@ -18,6 +18,11 @@ function Login() {
   const [showPassword, setShowPassword] = useState(false)
   const navigate = useNavigate()
   const login = useAuthStore((state) => state.login)
+  const [notice] = useState(() => {
+    const n = sessionStorage.getItem('loginNotice')
+    sessionStorage.removeItem('loginNotice')
+    return n
+  })
 
   const {
     register,
@@ -35,7 +40,9 @@ function Login() {
       login(response.data.user, response.data.token)
       toast.success('Login successful!')
 
-      if (response.data.user.role === 'super_admin' || response.data.user.role === 'admin') {
+      if (response.data.user.role === 'platform_admin') {
+        navigate('/platform')
+      } else if (response.data.user.role === 'super_admin' || response.data.user.role === 'admin') {
         navigate('/admin/dashboard')
       } else if (response.data.user.role === 'cashier') {
         navigate('/cashier/dashboard')
@@ -44,7 +51,7 @@ function Login() {
       toast.error(response.message || 'Login failed')
     }
   } catch (err) {
-    toast.error('Invalid email or password')
+    toast.error(err.response?.data?.message || 'Invalid email or password')
   }
 }
 
@@ -69,6 +76,9 @@ function Login() {
             Sign in to your account
           </h2>
 
+          {notice && (
+            <div className="mb-5 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-sm px-4 py-3">{notice}</div>
+          )}
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
 
             {/* Email */}
@@ -134,6 +144,11 @@ function Login() {
             </button>
 
           </form>
+
+          <p className="text-center text-sm text-gray-500 mt-6">
+            New business?{' '}
+            <Link to="/signup" className="text-green-600 font-medium hover:underline">Create an account</Link>
+          </p>
         </div>
 
       </div>

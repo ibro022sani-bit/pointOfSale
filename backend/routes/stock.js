@@ -351,7 +351,7 @@ router.post('/transfer', async (req, res) => {
     }
 
     const { data: transfer, error: transferErr } = await supabase
-      .from('stock_transfers').insert({ from_branch_id, to_branch_id, initiated_by: req.user.id, notes: notes || null }).select().single()
+      .from('stock_transfers').insert({ from_branch_id, to_branch_id, requested_by: req.user.id, notes: notes || null }).select().single()
 
     if (transferErr) return error(res, 'Could not create transfer', 500)
 
