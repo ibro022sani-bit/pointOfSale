@@ -154,7 +154,8 @@ router.post('/', async (req, res) => {
 
     if (saleErr) {
       if (saleErr.code === '23505') return error(res, 'This sale was already recorded (duplicate offline_id)')
-      return error(res, 'Could not create sale', 500)
+      console.error('Create sale failed:', saleErr)
+      return error(res, 'Could not create sale: ' + saleErr.message, 500)
     }
 
     const itemRows = items.map(i => ({
@@ -179,6 +180,7 @@ router.post('/', async (req, res) => {
 
     return success(res, { ...sale, items }, 'Sale created')
   } catch (err) {
+    console.error('Create sale crashed:', err)
     return error(res, 'Server error', 500)
   }
 })
