@@ -26,7 +26,7 @@ router.post('/staff/login', async (req, res) => {
     }
 
     const { data: tenant } = await supabase
-      .from('tenants').select('id, name, slug, status').eq('id', user.tenant_id).single()
+      .from('tenants').select('id, name, slug, status, phone, address, receipt_footer').eq('id', user.tenant_id).single()
     if (!tenant) return error(res, 'Business account not found', 403)
     if (tenant.status !== 'active') {
       return error(res, tenant.status === 'pending' ? 'Your account is awaiting activation. Please contact support.' : 'This account has been deactivated. Please make payment to reactivate it.', 403)
@@ -41,7 +41,7 @@ router.post('/staff/login', async (req, res) => {
     return success(res, {
       token,
       user: { id: user.id, name: user.name, email: user.email, role: user.role, branch_id: user.branch_id, tenant_id: user.tenant_id },
-      tenant: { id: tenant.id, name: tenant.name, slug: tenant.slug }
+      tenant: { id: tenant.id, name: tenant.name, slug: tenant.slug, phone: tenant.phone, address: tenant.address, receipt_footer: tenant.receipt_footer }
     }, 'Login successful')
   } catch (err) {
     return error(res, 'Server error', 500)

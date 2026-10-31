@@ -55,6 +55,11 @@ const useAuthStore = create((set) => ({
     set({ defaultBranchId: branchId })
   },
 
+  setTenant: (tenant) => {
+    localStorage.setItem('tenant', JSON.stringify(tenant))
+    set({ tenant })
+  },
+
   updateUser: (updates) => {
     set((state) => {
       const merged = { ...state.user, ...updates }

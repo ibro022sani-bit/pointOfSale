@@ -2,6 +2,7 @@ import { useRef } from 'react'
 import { useReactToPrint } from 'react-to-print'
 import { Printer, X } from 'lucide-react'
 import useAuthStore from '../../store/authStore'
+import { APP_NAME } from '../../config/brand'
 
 function Receipt({ sale, onClose }) {
   const receiptRef = useRef()
@@ -44,6 +45,8 @@ function Receipt({ sale, onClose }) {
           {/* Shop Header */}
           <div className="text-center mb-3">
             <h1 className="text-base font-bold tracking-wide uppercase">{tenant?.name || 'Receipt'}</h1>
+            {tenant?.address && <p className="text-[10px] text-gray-600">{tenant.address}</p>}
+            {tenant?.phone && <p className="text-[10px] text-gray-600">Tel: {tenant.phone}</p>}
             <p className="text-[10px] text-gray-500 mt-1">
               {new Date(sale.created_at).toLocaleString('en-NG', {
                 dateStyle: 'medium',
@@ -138,12 +141,11 @@ function Receipt({ sale, onClose }) {
 
           {/* Footer */}
           <div className="text-center pt-3 text-[10px] text-gray-600 space-y-2">
-            <p className="font-semibold text-gray-800">Thank you for your patronage!</p>
-            <p>Goods sold in good condition are not returnable</p>
+            <p className="font-semibold text-gray-800 whitespace-pre-line">{tenant?.receipt_footer || 'Thank you for your patronage!'}</p>
             <div className="border-t border-dashed border-black pt-2 mt-2">
-              <p className="text-[9px] text-gray-400">Management System by</p>
-              <p className="text-[10px] font-bold tracking-wide">SIFTECH</p>
-              <p className="text-[9px] text-gray-400">0816 999 2202</p>
+              <p className="text-[9px] text-gray-400">Powered by</p>
+              <p className="text-[10px] font-bold tracking-wide">{APP_NAME}</p>
+              
             </div>
           </div>
 

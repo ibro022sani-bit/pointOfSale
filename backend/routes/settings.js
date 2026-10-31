@@ -6,43 +6,48 @@ import { requireAuth, requireRole } from '../lib/middleware.js'
 const router = express.Router()
 router.use(requireAuth)
 
-router.get('/bank-accounts', async (req, res) => {
+router.get('/business', async (req, res) => {
   try {
-    const { data, error: dbError } = await req.db.from('bank_accounts').select('*').eq('is_active', true).order('created_at', { ascending: true })
-    if (dbError) return error(res, 'Could not fetch bank accounts', 500)
-    return success(res, data, 'Bank accounts fetched')
+    const { data, error: dbError } = await supabase
+      .from('tenants')
+      .select('id, name, slug, phone, address, receipt_footer, sms_sender_id, status, paid_until')
+      .eq('id', req.tenantId)
+      .single()
+    if (dbError || !data) return error(res, 'Could not fetch business profile', 500)
+    return success(res, data, 'Business profile fetched')
   } catch (err) {
     return error(res, 'Server error', 500)
   }
 })
 
-router.post('/bank-accounts', requireRole('super_admin', 'admin'), async (req, res) => {
+router.put('/business', requireRole('super_admin'), async (req, res) => {
   try {
-    const { bank_name, account_number, account_name } = req.body
-    if (!bank_name || !account_number || !account_name) {
-      return error(res, 'bank_name, account_number and account_name are required')
-    }
-
-    const { data: account, error: dbError } = await req.db
-      .from('bank_accounts').insert({ bank_name, account_number, account_name }).select().single()
-
-    if (dbError) return error(res, 'Could not create bank account', 500)
-    return success(res, account, 'Bank account added')
-  } catch (err) {
-    return error(res, 'Server error', 500)
-  }
-})
-
-router.put('/bank-accounts/:id', requireRole('super_admin', 'admin'), async (req, res) => {
-  try {
-    const { id } = req.params
-    const allowed = ['bank_name', 'account_number', 'account_name', 'is_active']
+    const clean = (v, max) => (typeof v === 'string' ? v.trim().slice(0, max) : undefined)
     const updates = {}
-    for (const key of allowed) if (req.body[key] !== undefined) updates[key] = req.body[key]
 
-    const { data: updated, error: dbError } = await req.db.from('bank_accounts').update(updates).eq('id', id).select().single()
-    if (dbError) return error(res, 'Could not update bank account', 500)
-    return success(res, updated, 'Bank account updated')
+    const name = clean(req.body.name, 80)
+    if (name !== undefined) {
+      if (!name) return error(res, 'Business name cannot be empty')
+      updates.name = name
+    }
+    const phone = clean(req.body.phone, 30)
+    if (phone !== undefined) updates.phone = phone || null
+    const address = clean(req.body.address, 200)
+    if (address !== undefined) updates.address = address || null
+    const footer = clean(req.body.receipt_footer, 300)
+    if (footer !== undefined) updates.receipt_footer = footer || null
+
+    if (Object.keys(updates).length === 0) return error(res, 'Nothing to update')
+    updates.updated_at = new Date().toISOString()
+
+    const { data, error: dbError } = await supabase
+      .from('tenants')
+      .update(updates)
+      .eq('id', req.tenantId)
+      .select('id, name, slug, phone, address, receipt_footer')
+      .single()
+    if (dbError) return error(res, 'Could not update business profile', 500)
+    return success(res, data, 'Business profile updated')
   } catch (err) {
     return error(res, 'Server error', 500)
   }

@@ -4,6 +4,7 @@ import Landing from './pages/Landing'
 import Login from './pages/auth/Login'
 import Signup from './pages/auth/Signup'
 import Tenants from './pages/platform/Tenants'
+import Settings from './pages/admin/Settings'
 import AdminLayout from './components/common/AdminLayout'
 import CashierLayout from './components/common/CashierLayout'
 import Dashboard from './pages/admin/Dashboard'
@@ -203,7 +204,7 @@ function App() {
           <ProtectedRoute allowed={['super_admin', 'admin']}><AdminPage><CustomerReport /></AdminPage></ProtectedRoute>
         } />
         <Route path="/admin/settings" element={
-          <ProtectedRoute allowed={['super_admin']}><AdminPage title="Settings" /></ProtectedRoute>
+          <ProtectedRoute allowed={['super_admin']}><AdminPage><Settings /></AdminPage></ProtectedRoute>
         } />
         <Route path="/admin/stock" element={
           <ProtectedRoute allowed={['super_admin', 'admin']}><AdminPage><Stock /></AdminPage></ProtectedRoute>
