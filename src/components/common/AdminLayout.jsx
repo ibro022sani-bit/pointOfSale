@@ -58,7 +58,7 @@ const navItems = [
 function AdminLayout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const navigate = useNavigate()
-  const { user, logout, defaultBranchId } = useAuthStore()
+  const { user, logout, defaultBranchId, tenant } = useAuthStore()
   const isMainBranchUser = useBranchStore((state) => state.isMainBranchUser)
 
   const visibleNavItems = navItems
@@ -101,10 +101,10 @@ function AdminLayout({ children }) {
         <div className="flex items-center justify-between px-4 py-4 border-b border-gray-100">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 bg-green-600 rounded-xl flex items-center justify-center">
-              <span className="text-white text-sm font-bold">SA</span>
+              <span className="text-white text-sm font-bold">{(tenant?.name || 'POS').trim().slice(0, 2).toUpperCase()}</span>
             </div>
             <div>
-              <p className="text-sm font-bold text-gray-800 leading-tight">Almubeen General Merchant</p>
+              <p className="text-sm font-bold text-gray-800 leading-tight">{tenant?.name || 'POS System'}</p>
               <p className="text-xs text-gray-400">POS System</p>
             </div>
           </div>

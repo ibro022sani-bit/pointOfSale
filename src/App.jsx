@@ -105,7 +105,7 @@ function RootRoute() {
   if (isAuthenticated) {
     return <Navigate to={dashboardPathFor(user)} replace />
   }
-  return <Landing />
+  return <Navigate to="/login" replace />
 }
 
 function PublicOnlyRoute({ children }) {

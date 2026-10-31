@@ -5,10 +5,11 @@ import api from '../../services/api'
 import useAuthStore from '../../store/authStore'
 import useBranchStore from '../../store/branchStore'
 
-const SHOP_NAME = 'ALMUBEEN GENERAL ENTERPRISES'
+
 
 function Deposits() {
-  const { user } = useAuthStore()
+  const { user, tenant } = useAuthStore()
+  const SHOP_NAME = (tenant?.name || '').toUpperCase()
   const [customers, setCustomers] = useState([])
   const [branches, setBranches] = useState([])
   const [loading, setLoading] = useState(true)

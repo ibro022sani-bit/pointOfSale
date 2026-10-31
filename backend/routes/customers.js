@@ -115,9 +115,10 @@ router.post('/:id/reminders/send-now', requireRole('super_admin', 'admin'), asyn
       return error(res, 'This customer has no outstanding balance')
     }
 
-    const message = `Hi ${customer.name}, this is a reminder from Almubeen General Merchant that you have an outstanding balance of ₦${Number(account.current_balance).toLocaleString()}. Kindly settle at your earliest convenience.`
+    const { data: tenant } = await supabase.from('tenants').select('name, sms_sender_id').eq('id', req.tenantId).single()
+    const message = `Hi ${customer.name}, this is a reminder from ${tenant?.name || 'us'} that you have an outstanding balance of ₦${Number(account.current_balance).toLocaleString()}. Kindly settle at your earliest convenience.`
 
-    const sent = await sendSMS(customer.phone, message)
+    const sent = await sendSMS(customer.phone, message, tenant?.sms_sender_id)
 
     await req.db.from('notifications').insert({
       type: 'debt_reminder', recipient_type: 'customer', recipient_id: id,

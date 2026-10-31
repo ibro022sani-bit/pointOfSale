@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { APP_NAME } from '../../config/brand'
 
 /**
  * Drop your official logo at `public/logo.png` (so it's served from `/logo.png`).
@@ -25,7 +26,7 @@ function Logo({ size = 36, showText = true, textClassName = '', subtitle }) {
       ) : (
         <img
           src="/logo.png"
-          alt="Almubeen"
+          alt={APP_NAME}
           style={{ width: px, height: px }}
           className="rounded-xl object-contain shrink-0 bg-white"
           onError={() => setBroken(true)}
@@ -33,7 +34,7 @@ function Logo({ size = 36, showText = true, textClassName = '', subtitle }) {
       )}
       {showText && (
         <div>
-          <p className={`font-bold text-gray-800 leading-tight ${textClassName}`}>Almubeen</p>
+          <p className={`font-bold text-gray-800 leading-tight ${textClassName}`}>{APP_NAME}</p>
           {subtitle && <p className="text-xs text-gray-400">{subtitle}</p>}
         </div>
       )}

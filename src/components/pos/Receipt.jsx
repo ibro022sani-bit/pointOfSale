@@ -1,9 +1,11 @@
 import { useRef } from 'react'
 import { useReactToPrint } from 'react-to-print'
 import { Printer, X } from 'lucide-react'
+import useAuthStore from '../../store/authStore'
 
 function Receipt({ sale, onClose }) {
   const receiptRef = useRef()
+  const tenant = useAuthStore((s) => s.tenant)
 
   const handlePrint = useReactToPrint({
     contentRef: receiptRef,
@@ -41,8 +43,7 @@ function Receipt({ sale, onClose }) {
 
           {/* Shop Header */}
           <div className="text-center mb-3">
-            <h1 className="text-base font-bold tracking-wide">ALMUBEEN</h1>
-            <p className="text-[10px] text-gray-600">GENERAL ENTERPRISES</p>
+            <h1 className="text-base font-bold tracking-wide uppercase">{tenant?.name || 'Receipt'}</h1>
             <p className="text-[10px] text-gray-500 mt-1">
               {new Date(sale.created_at).toLocaleString('en-NG', {
                 dateStyle: 'medium',

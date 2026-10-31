@@ -7,11 +7,11 @@ function normalizePhone(phone) {
   return digits
 }
 
-export async function sendSMS(phone, message) {
+export async function sendSMS(phone, message, senderId) {
   try {
     const response = await axios.post(`${process.env.TERMII_BASE_URL}api/sms/send`, {
       to: normalizePhone(phone),
-      from: 'ALMUBEEN',
+      from: senderId || process.env.TERMII_SENDER_ID || 'N-Alert',
       sms: message,
       type: 'plain',
       channel: 'dnd',

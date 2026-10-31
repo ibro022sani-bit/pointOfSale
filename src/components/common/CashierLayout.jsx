@@ -19,7 +19,7 @@ const navItems = [
 function CashierLayout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const navigate = useNavigate()
-  const { user, logout } = useAuthStore()
+  const { user, logout, tenant } = useAuthStore()
 
   const handleLogout = () => {
     logout()
@@ -43,10 +43,10 @@ function CashierLayout({ children }) {
         <div className="flex items-center justify-between px-4 py-4 border-b border-gray-100">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 bg-green-600 rounded-xl flex items-center justify-center">
-              <span className="text-white text-sm font-bold">SA</span>
+              <span className="text-white text-sm font-bold">{(tenant?.name || 'POS').trim().slice(0, 2).toUpperCase()}</span>
             </div>
             <div>
-              <p className="text-sm font-bold text-gray-800 leading-tight">Almubeen General Merchant</p>
+              <p className="text-sm font-bold text-gray-800 leading-tight">{tenant?.name || 'POS System'}</p>
               <p className="text-xs text-gray-400">Cashier Portal</p>
             </div>
           </div>

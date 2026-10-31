@@ -1,6 +1,18 @@
 import Dexie from 'dexie'
 
-const db = new Dexie('Almubeen')
+// One local database per business, so cached data and queued offline sales never mix.
+// Al-Mubeen keeps its original name so existing devices keep their unsynced data.
+const ALMUBEEN_TENANT_ID = '944f967c-b6d7-4b36-a184-db9340bfd5e3'
+const tenantId = (() => {
+  try {
+    return JSON.parse(localStorage.getItem('user'))?.tenant_id || null
+  } catch {
+    return null
+  }
+})()
+const dbName = !tenantId ? 'pos_guest' : tenantId === ALMUBEEN_TENANT_ID ? 'Almubeen' : `pos_${tenantId}`
+
+const db = new Dexie(dbName)
 
 db.version(1).stores({
   products: 'id, name, category, barcode, branch_id',

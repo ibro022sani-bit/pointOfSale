@@ -11,9 +11,9 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico'],
       manifest: {
-        name: 'Almubeen General Merchant POS',
-        short_name: 'Almubeen',
-        description: 'POS System for Almubeen General Merchant',
+        name: 'Kasuwana',
+        short_name: 'Kasuwana',
+        description: 'Point of sale and inventory for your business',
         theme_color: '#16a34a',
         background_color: '#f0fdf4',
         display: 'standalone',

@@ -15,6 +15,7 @@ router.post('/sms/bulk', requireRole('super_admin'), async (req, res) => {
 
     const { data: customers } = await req.db.from('customers').select('id, name, phone').in('id', customer_ids)
 
+    const { data: tenant } = await supabase.from('tenants').select('sms_sender_id').eq('id', req.tenantId).single()
     const results = []
     for (const customerId of customer_ids) {
       const customer = customers.find(c => c.id === customerId)
@@ -27,7 +28,7 @@ router.post('/sms/bulk', requireRole('super_admin'), async (req, res) => {
         continue
       }
 
-      const sent = await sendSMS(customer.phone, message)
+      const sent = await sendSMS(customer.phone, message, tenant?.sms_sender_id)
 
       await req.db.from('notifications').insert({
         type: 'bulk_reminder', recipient_type: 'customer', recipient_id: customerId,

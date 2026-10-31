@@ -8,6 +8,7 @@ import useAuthStore from '../../store/authStore'
 import { useNavigate, Link } from 'react-router-dom'
 import { staffLogin } from '../../services/authService'
 import Logo from '../../components/common/Logo'
+import { APP_NAME } from '../../config/brand'
 
 const loginSchema = z.object({
   email: z.string().email('Enter a valid email address'),
@@ -37,15 +38,15 @@ function Login() {
     const response = await staffLogin(data.email, data.password)
 
     if (response.success) {
-      login(response.data.user, response.data.token)
+      login(response.data.user, response.data.token, response.data.tenant)
       toast.success('Login successful!')
 
       if (response.data.user.role === 'platform_admin') {
-        navigate('/platform')
+        window.location.assign('/platform')
       } else if (response.data.user.role === 'super_admin' || response.data.user.role === 'admin') {
-        navigate('/admin/dashboard')
+        window.location.assign('/admin/dashboard')
       } else if (response.data.user.role === 'cashier') {
-        navigate('/cashier/dashboard')
+        window.location.assign('/cashier/dashboard')
       }
     } else {
       toast.error(response.message || 'Login failed')
@@ -66,8 +67,8 @@ function Login() {
           <div className="inline-flex justify-center mb-4">
             <Logo size={64} showText={false} />
           </div>
-          <h1 className="text-2xl font-bold text-gray-800">ALMUBEEN</h1>
-          <p className="text-gray-500 text-sm mt-1">GENERAL MERCHANT</p>
+          <h1 className="text-2xl font-bold text-gray-800">{APP_NAME}</h1>
+          <p className="text-gray-500 text-sm mt-1">Sign in to continue</p>
         </div>
 
         {/* Card */}

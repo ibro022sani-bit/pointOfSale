@@ -9,24 +9,34 @@ const storedUser = (() => {
   }
 })()
 const storedDefaultBranchId = localStorage.getItem('defaultBranchId')
+const storedTenant = (() => {
+  try {
+    return JSON.parse(localStorage.getItem('tenant'))
+  } catch {
+    return null
+  }
+})()
 
 const useAuthStore = create((set) => ({
   user: storedUser,
   token: storedToken,
   isAuthenticated: !!(storedToken && storedUser),
   defaultBranchId: storedDefaultBranchId || null,
+  tenant: storedTenant,
 
-  login: (user, token) => {
+  login: (user, token, tenant = null) => {
     localStorage.setItem('token', token)
     localStorage.setItem('user', JSON.stringify(user))
-    set({ user, token, isAuthenticated: true })
+    localStorage.setItem('tenant', JSON.stringify(tenant))
+    set({ user, token, tenant, isAuthenticated: true })
   },
 
   logout: () => {
     localStorage.removeItem('token')
     localStorage.removeItem('user')
+    localStorage.removeItem('tenant')
     localStorage.removeItem('defaultBranchId')
-    set({ user: null, token: null, isAuthenticated: false, defaultBranchId: null })
+    set({ user: null, token: null, tenant: null, isAuthenticated: false, defaultBranchId: null })
   },
 
   // Kept for compatibility — no longer needed for the initial page load
