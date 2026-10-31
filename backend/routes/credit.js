@@ -27,7 +27,7 @@ router.put('/:id/credit/limit', requireRole('super_admin'), async (req, res) => 
 
     const { data: existingAccount } = await req.db.from('credit_accounts').select('id').eq('customer_id', customer_id).maybeSingle()
 
-    const { data: account, error: dbError } = await supabase
+    const { data: account, error: dbError } = await req.db
       .from('credit_accounts')
       .upsert({
         customer_id,
@@ -85,7 +85,7 @@ router.get('/:id/credit/transactions', requireRole('super_admin', 'admin', 'cash
     const { data: account } = await req.db.from('credit_accounts').select('id').eq('customer_id', customer_id).maybeSingle()
     if (!account) return success(res, [], 'No credit account exists yet')
 
-    const { data, error: dbError } = await supabase
+    const { data, error: dbError } = await req.db
       .from('credit_transactions').select('*').eq('credit_account_id', account.id).order('created_at', { ascending: false })
 
     if (dbError) return error(res, 'Could not fetch credit transactions', 500)
@@ -118,7 +118,7 @@ router.post('/:id/credit/repay', requireRole('super_admin', 'admin', 'cashier'),
 
     const newBalance = Number(account.current_balance) - Number(amount)
 
-    const { data: payment, error: payErr } = await supabase
+    const { data: payment, error: payErr } = await req.db
       .from('payments')
       .insert({ credit_account_id: account.id, amount, payment_method, reference: reference || null, confirmed_by: req.user.id, offline_id: offline_id || null, branch_id: effectiveBranchId })
       .select().single()
@@ -155,7 +155,7 @@ router.post('/:id/credit/adjust', requireRole('super_admin'), async (req, res) =
       if (credit_limit === undefined || credit_limit < 0) {
         return error(res, 'credit_limit is required to open a new credit account for this customer')
       }
-      const { data: newAccount, error: openErr } = await supabase
+      const { data: newAccount, error: openErr } = await req.db
         .from('credit_accounts')
         .insert({ customer_id, credit_limit, opened_by: req.user.id })
         .select().single()
@@ -167,7 +167,7 @@ router.post('/:id/credit/adjust', requireRole('super_admin'), async (req, res) =
 
     const newBalance = Number(account.current_balance) + Number(amount)
 
-    const { data: updated, error: dbError } = await supabase
+    const { data: updated, error: dbError } = await req.db
       .from('credit_accounts').update({ current_balance: newBalance }).eq('id', account.id).select().single()
 
     if (dbError) return error(res, 'Could not adjust balance', 500)
@@ -202,7 +202,7 @@ router.post('/:id/credit/repay-from-deposit', requireRole('super_admin', 'admin'
     const newCreditBalance = Number(creditAccount.current_balance) - Number(amount)
     const newDepositBalance = Number(depositAccount.current_balance) - Number(amount)
 
-    const { data: payment, error: payErr } = await supabase
+    const { data: payment, error: payErr } = await req.db
       .from('payments')
       .insert({ credit_account_id: creditAccount.id, amount, payment_method: 'deposit', confirmed_by: req.user.id })
       .select().single()

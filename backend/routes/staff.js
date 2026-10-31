@@ -10,7 +10,7 @@ router.use(requireRole('super_admin', 'admin'))
 
 router.get('/', async (req, res) => {
   try {
-    let query = supabase
+    let query = req.db
       .from('users').select('id, name, email, phone, role, branch_id, is_active, created_at, branches(name)')
       .order('name', { ascending: true })
 
@@ -43,7 +43,7 @@ router.post('/', async (req, res) => {
     if (existing) return error(res, 'A staff account with this email already exists')
 
     const hashedPassword = await bcrypt.hash(password, 10)
-    const { data: user, error: dbError } = await supabase
+    const { data: user, error: dbError } = await req.db
       .from('users')
       .insert({ name, email: email.trim().toLowerCase(), phone: phone || null, password: hashedPassword, role, branch_id: finalBranchId || null })
       .select('id, name, email, phone, role, branch_id, is_active, created_at').single()
@@ -59,7 +59,7 @@ router.post('/', async (req, res) => {
 
 router.get('/:id', async (req, res) => {
   try {
-    const { data, error: dbError } = await supabase
+    const { data, error: dbError } = await req.db
       .from('users').select('id, name, email, phone, role, branch_id, is_active, created_at, branches(name)')
       .eq('id', req.params.id).single()
 

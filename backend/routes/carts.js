@@ -13,12 +13,12 @@ router.post('/', async (req, res) => {
     if (!branch_id) return error(res, 'branch_id is required')
     if (req.user.role !== 'super_admin') branch_id = req.user.branch_id
 
-    const { data: existingOpen } = await supabase
+    const { data: existingOpen } = await req.db
       .from('loose_sale_carts').select('id').eq('branch_id', branch_id).eq('status', 'open').maybeSingle()
 
     if (existingOpen) return error(res, 'This branch already has an open cart — close it before opening a new one')
 
-    const { data: cart, error: dbError } = await supabase
+    const { data: cart, error: dbError } = await req.db
       .from('loose_sale_carts')
       .insert({ cashier_id: req.user.id, branch_id, status: 'open' })
       .select().single()
@@ -33,7 +33,7 @@ router.post('/', async (req, res) => {
 router.get('/active', async (req, res) => {
   try {
     const { branch } = req.query
-    let query = supabase
+    let query = req.db
       .from('loose_sale_carts')
       .select('*, cart_items(*, products(name, unit_of_measurement)), users:cashier_id(name)')
       .eq('status', 'open')
@@ -53,7 +53,7 @@ router.get('/open', async (req, res) => {
     const { branch_id } = req.query
     if (!branch_id) return error(res, 'branch_id is required')
 
-    const { data, error: dbError } = await supabase
+    const { data, error: dbError } = await req.db
       .from('loose_sale_carts')
       .select('*, cart_items(*, products(name, unit_of_measurement)), users:cashier_id(name)')
       .eq('branch_id', branch_id)
@@ -68,7 +68,7 @@ router.get('/open', async (req, res) => {
 })
 router.get('/:id', async (req, res) => {
   try {
-    const { data: cart, error: dbError } = await supabase
+    const { data: cart, error: dbError } = await req.db
       .from('loose_sale_carts')
       .select('*, cart_items(*, products(name, unit_of_measurement)), users:cashier_id(name)')
       .eq('id', req.params.id).single()
@@ -103,7 +103,7 @@ router.post('/:id/items', async (req, res) => {
       return error(res, 'Insufficient stock for this product')
     }
 
-    const { data: item, error: itemErr } = await supabase
+    const { data: item, error: itemErr } = await req.db
       .from('cart_items')
       .insert({ cart_id, product_id, initial_quantity, remaining_quantity: initial_quantity, unit_price, offline_id: offline_id || null })
       .select().single()
@@ -216,7 +216,7 @@ router.put('/:id/close', async (req, res) => {
         }
       }
 
-      const { data: closedCart, error: closeErr } = await supabase
+      const { data: closedCart, error: closeErr } = await req.db
         .from('loose_sale_carts').update({ status: 'closed', closed_at: new Date(), sale_id: null }).eq('id', cart_id).select().single()
 
       if (closeErr) return error(res, 'Could not close cart', 500)
@@ -243,7 +243,7 @@ router.put('/:id/close', async (req, res) => {
       creditAccount = account
     }
 
-    const { data: sale, error: saleErr } = await supabase
+    const { data: sale, error: saleErr } = await req.db
       .from('sales')
       .insert({
         branch_id: cart.branch_id,
@@ -283,7 +283,7 @@ router.put('/:id/close', async (req, res) => {
       })
     }
 
-    const { data: updatedCart, error: cartErr } = await supabase
+    const { data: updatedCart, error: cartErr } = await req.db
       .from('loose_sale_carts').update({ status: 'closed', closed_at: new Date(), sale_id: sale.id }).eq('id', cart_id).select().single()
 
     if (cartErr) return error(res, 'Could not close cart', 500)

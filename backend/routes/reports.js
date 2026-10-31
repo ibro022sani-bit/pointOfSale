@@ -66,7 +66,7 @@ router.get('/customers/top-spenders', async (req, res) => {
     let { date_from, date_to, branch_id } = req.query
     if (req.user.role !== 'super_admin') branch_id = req.user.branch_id
 
-    let query = supabase
+    let query = req.db
       .from('sales')
       .select('customer_id, total_amount, customers(name, phone)')
       .eq('status', 'completed')
@@ -147,7 +147,7 @@ router.get('/stock', async (req, res) => {
 
 router.get('/debt', async (req, res) => {
   try {
-    const { data, error: dbError } = await supabase
+    const { data, error: dbError } = await req.db
       .from('credit_accounts')
       .select('*, customers(name, phone)')
       .gt('current_balance', 0)
@@ -214,7 +214,7 @@ router.get('/profit-loss', async (req, res) => {
     let cost_of_goods_sold = 0
     let by_product = []
     if (saleIds.length > 0) {
-      const { data: saleItems } = await supabase
+      const { data: saleItems } = await req.db
         .from('sale_items')
         .select('product_id, quantity, subtotal, products(name)')
         .in('sale_id', saleIds)
@@ -268,7 +268,7 @@ router.get('/profit-loss', async (req, res) => {
 
 router.get('/supplier-debt', requireRole('super_admin'), async (req, res) => {
   try {
-    const { data, error: dbError } = await supabase
+    const { data, error: dbError } = await req.db
       .from('stock_receipts')
       .select('supplier_id, total_cost, amount_paid, suppliers(name)')
       .in('payment_status', ['unpaid', 'partial'])
@@ -303,7 +303,7 @@ router.get('/due-payments', async (req, res) => {
 
     const now = new Date()
 
-    let saleQuery = supabase
+    let saleQuery = req.db
       .from('sales')
       .select('id, branch_id, customer_id, total_amount, days_to_settle, created_at, customers(name, credit_accounts(current_balance)), branches(name)')
       .eq('payment_method', 'credit')
@@ -351,7 +351,7 @@ router.get('/daily-collections', async (req, res) => {
     nextDay.setDate(nextDay.getDate() + 1)
     const endOfDay = nextDay.toISOString().slice(0, 10) + 'T00:00:00'
 
-    let saleQuery = supabase
+    let saleQuery = req.db
       .from('sales')
       .select('payment_method, total_amount, amount_paid')
       .eq('status', 'completed')
@@ -367,7 +367,7 @@ router.get('/daily-collections', async (req, res) => {
       else if (s.payment_method === 'split') split_upfront += Number(s.amount_paid || 0)
     }
 
-    let depositQuery = supabase
+    let depositQuery = req.db
       .from('deposit_transactions')
       .select('amount')
       .eq('type', 'deposit_in')
@@ -377,7 +377,7 @@ router.get('/daily-collections', async (req, res) => {
 
     const deposits_received = (deposits || []).reduce((sum, d) => sum + Number(d.amount), 0)
 
-    let repayQuery = supabase
+    let repayQuery = req.db
       .from('payments')
       .select('amount')
       .not('credit_account_id', 'is', null)
@@ -389,7 +389,7 @@ router.get('/daily-collections', async (req, res) => {
 
     const credit_repayments = (repayments || []).reduce((sum, p) => sum + Number(p.amount), 0)
 
-    let creditSaleQuery = supabase
+    let creditSaleQuery = req.db
       .from('sales')
       .select('payment_method, total_amount, amount_paid')
       .eq('status', 'completed')

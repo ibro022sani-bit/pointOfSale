@@ -23,7 +23,7 @@ router.post('/bank-accounts', requireRole('super_admin', 'admin'), async (req, r
       return error(res, 'bank_name, account_number and account_name are required')
     }
 
-    const { data: account, error: dbError } = await supabase
+    const { data: account, error: dbError } = await req.db
       .from('bank_accounts').insert({ bank_name, account_number, account_name }).select().single()
 
     if (dbError) return error(res, 'Could not create bank account', 500)

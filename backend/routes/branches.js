@@ -21,7 +21,7 @@ router.post('/', requireRole('super_admin', 'admin'), async (req, res) => {
     const { name, address, phone, is_main } = req.body
     if (!name) return error(res, 'Branch name is required')
 
-    const { data: branch, error: dbError } = await supabase
+    const { data: branch, error: dbError } = await req.db
       .from('branches').insert({ name, address: address || null, phone: phone || null, is_main: !!is_main }).select().single()
 
     if (dbError) return error(res, 'Could not create branch', 500)
@@ -98,7 +98,7 @@ router.post('/:id/products', requireRole('super_admin', 'admin'), async (req, re
     const { data: product } = await req.db.from('products').select('id').eq('id', product_id).single()
     if (!product) return error(res, 'Product not found', 404)
 
-    const { data, error: dbError } = await supabase
+    const { data, error: dbError } = await req.db
       .from('branch_products')
       .upsert({ branch_id, product_id, is_active: true }, { onConflict: 'branch_id,product_id' })
       .select()
@@ -108,7 +108,7 @@ router.post('/:id/products', requireRole('super_admin', 'admin'), async (req, re
 
     const quantity = initial_stock !== undefined ? initial_stock : 0
 
-    const { data: stock } = await supabase
+    const { data: stock } = await req.db
       .from('stock')
       .upsert({
         branch_id,
@@ -121,7 +121,7 @@ router.post('/:id/products', requireRole('super_admin', 'admin'), async (req, re
 
     let receipt = null
     if (cost_price !== undefined && quantity > 0) {
-      const { data: receiptRow, error: receiptErr } = await supabase
+      const { data: receiptRow, error: receiptErr } = await req.db
         .from('stock_receipts')
         .insert({
           branch_id,

@@ -22,7 +22,7 @@ router.post('/', requireRole('super_admin', 'admin'), async (req, res) => {
     const { name, phone, email, address } = req.body
     if (!name) return error(res, 'Supplier name is required')
 
-    const { data: supplier, error: dbError } = await supabase
+    const { data: supplier, error: dbError } = await req.db
       .from('suppliers').insert({ name, phone: phone || null, email: email || null, address: address || null }).select().single()
 
     if (dbError) return error(res, 'Could not create supplier', 500)

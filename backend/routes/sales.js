@@ -13,7 +13,7 @@ router.get('/pending-collection', async (req, res) => {
     if (req.user.role !== 'super_admin') branch_id = req.user.branch_id
     if (!branch_id) return error(res, 'branch_id is required')
 
-    const { data, error: dbError } = await supabase
+    const { data, error: dbError } = await req.db
       .from('sales')
       .select('*, customers(name, phone), sale_items(*, products(name)), users:cashier_id(name)')
       .eq('branch_id', branch_id)
@@ -35,7 +35,7 @@ router.get('/today', async (req, res) => {
     const startOfDay = new Date()
     startOfDay.setHours(0, 0, 0, 0)
 
-    let query = supabase
+    let query = req.db
       .from('sales')
       .select('*, customers(name, phone), sale_items(*, products(name)))')
       .gte('created_at', startOfDay.toISOString())
@@ -56,7 +56,7 @@ router.get('/', async (req, res) => {
     let { branch, status, from, to, customer } = req.query
     if (req.user.role !== 'super_admin') branch = req.user.branch_id
 
-    let query = supabase
+    let query = req.db
       .from('sales')
       .select('*, customers(name, phone), branches(name), users:cashier_id(name)')
       .order('created_at', { ascending: false })
@@ -132,7 +132,7 @@ router.post('/', async (req, res) => {
       creditAccount = account
     }
 
-    const { data: sale, error: saleErr } = await supabase
+    const { data: sale, error: saleErr } = await req.db
     .from('sales')
     .insert({
     branch_id,
@@ -187,7 +187,7 @@ router.post('/', async (req, res) => {
 
 router.get('/:id/receipt', async (req, res) => {
   try {
-    const { data: sale, error: dbError } = await supabase
+    const { data: sale, error: dbError } = await req.db
       .from('sales')
       .select('*, branches(name, address, phone), customers(name, phone), users:cashier_id(name), sale_items(*, products(name, unit_of_measurement)))')
       .eq('id', req.params.id).single()
@@ -201,7 +201,7 @@ router.get('/:id/receipt', async (req, res) => {
 
 router.get('/:id', async (req, res) => {
   try {
-    const { data: sale, error: dbError } = await supabase
+    const { data: sale, error: dbError } = await req.db
       .from('sales')
       .select('*, branches(name), customers(name, phone), sale_items(*, products(name)))')
       .eq('id', req.params.id).single()
@@ -264,7 +264,7 @@ router.put('/:id/collect', async (req, res) => {
       return error(res, 'This has already been marked as collected')
     }
 
-    const { data: updated, error: dbError } = await supabase
+    const { data: updated, error: dbError } = await req.db
       .from('sales')
       .update({ collection_status: 'collected' })
       .eq('id', id)
@@ -282,7 +282,7 @@ router.get('/credit-due', async (req, res) => {
     let { branch } = req.query
     if (req.user.role !== 'super_admin') branch = req.user.branch_id
 
-    let query = supabase
+    let query = req.db
       .from('sales')
       .select('id, branch_id, customer_id, total_amount, days_to_settle, created_at, customers(name, credit_accounts(current_balance)), branches(name)')
       .eq('payment_method', 'credit')

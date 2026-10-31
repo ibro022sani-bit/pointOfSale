@@ -23,7 +23,7 @@ router.post('/', requireRole('super_admin'), async (req, res) => {
       return error(res, 'name, category, unit_of_measurement and price are required')
     }
 
-    const { data: product, error: dbError } = await supabase
+    const { data: product, error: dbError } = await req.db
       .from('products')
       .insert({ name, category, drug_type: drug_type || null, unit_of_measurement, weight: weight || null, brand: brand || null, barcode: barcode || null, price, wholesale_price: wholesale_price ?? null })
       .select().single()
@@ -48,7 +48,7 @@ router.get('/search', async (req, res) => {
     if (branch_id && req.user.role !== 'super_admin') branch_id = req.user.branch_id
 
     if (branch_id) {
-      const { data: branchProducts, error: dbError } = await supabase
+      const { data: branchProducts, error: dbError } = await req.db
         .from('branch_products')
         .select('product_id, products(*)')
         .eq('branch_id', branch_id)
@@ -62,7 +62,7 @@ router.get('/search', async (req, res) => {
         .slice(0, 50)
 
       const productIds = filtered.map(bp => bp.product_id)
-      const { data: stockRows } = await supabase
+      const { data: stockRows } = await req.db
         .from('stock')
         .select('product_id, quantity, low_stock_threshold')
         .eq('branch_id', branch_id)
@@ -76,7 +76,7 @@ router.get('/search', async (req, res) => {
       return success(res, merged, 'Search results')
     }
 
-    const { data, error: dbError } = await supabase
+    const { data, error: dbError } = await req.db
       .from('products').select('*').eq('is_active', true).ilike('name', `%${q}%`).order('name', { ascending: true }).limit(50)
 
     if (dbError) return error(res, 'Search failed', 500)
@@ -88,7 +88,7 @@ router.get('/search', async (req, res) => {
 
 router.get('/barcode/:barcode', async (req, res) => {
   try {
-    const { data, error: dbError } = await supabase
+    const { data, error: dbError } = await req.db
       .from('products').select('*').eq('barcode', req.params.barcode).eq('is_active', true).single()
 
     if (dbError || !data) return error(res, 'Product not found', 404)
@@ -102,7 +102,7 @@ router.get('/branch/:branchId', async (req, res) => {
   try {
     const { branchId } = req.params
 
-    const { data: branchProducts, error: dbError } = await supabase
+    const { data: branchProducts, error: dbError } = await req.db
       .from('branch_products')
       .select('product_id, is_active, products(*)')
       .eq('branch_id', branchId)
@@ -111,7 +111,7 @@ router.get('/branch/:branchId', async (req, res) => {
     if (dbError) return error(res, 'Could not fetch branch products', 500)
 
     const productIds = branchProducts.map(bp => bp.product_id)
-    const { data: stockRows } = await supabase
+    const { data: stockRows } = await req.db
       .from('stock')
       .select('product_id, quantity, low_stock_threshold')
       .eq('branch_id', branchId)
@@ -210,7 +210,7 @@ router.get('/:id/branches', async (req, res) => {
     const { data: product } = await req.db.from('products').select('id').eq('id', id).single()
     if (!product) return error(res, 'Product not found', 404)
 
-    const { data: branchProducts, error: dbError } = await supabase
+    const { data: branchProducts, error: dbError } = await req.db
       .from('branch_products')
       .select('branch_id, is_active, branches(id, name, address)')
       .eq('product_id', id)
@@ -219,7 +219,7 @@ router.get('/:id/branches', async (req, res) => {
     if (dbError) return error(res, 'Could not fetch branches for this product', 500)
 
     const branchIds = branchProducts.map(bp => bp.branch_id)
-    const { data: stockRows } = await supabase
+    const { data: stockRows } = await req.db
       .from('stock')
       .select('branch_id, quantity, low_stock_threshold')
       .eq('product_id', id)

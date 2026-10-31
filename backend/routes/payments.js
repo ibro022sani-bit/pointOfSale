@@ -32,7 +32,7 @@ async function confirmPayment(req, res, expectedMethod) {
 
     const paidAmount = expectedMethod === 'cash' ? Number(amount_paid) : amountOwed
 
-    const { data: payment, error: payErr } = await supabase
+    const { data: payment, error: payErr } = await req.db
       .from('payments')
       .insert({
         sale_id, amount: amountOwed, payment_method: expectedMethod,
@@ -44,14 +44,14 @@ async function confirmPayment(req, res, expectedMethod) {
 
     const changeGiven = expectedMethod === 'cash' ? paidAmount - amountOwed : 0
 
-    const { error: saleErr } = await supabase
+    const { error: saleErr } = await req.db
       .from('sales')
       .update({ amount_paid: paidAmount, change_given: changeGiven, payment_status: 'paid' })
       .eq('id', sale_id)
 
     if (saleErr) return error(res, 'Could not update sale', 500)
 
-    const { data: receipt, error: receiptErr } = await supabase
+    const { data: receipt, error: receiptErr } = await req.db
       .from('sales')
       .select('*, branches(name, address, phone), customers(name, phone), users:cashier_id(name), sale_items(*, products(name, unit_of_measurement)))')
       .eq('id', sale_id).single()
@@ -100,7 +100,7 @@ router.post('/deposit/confirm', async (req, res) => {
       deposit_account_id: account.id, type: 'deposit_out', amount, sale_id, balance_after: newBalance, note: null, confirmed_by: req.user.id, branch_id: effectiveBranchId
     })
 
-    const { data: payment, error: payErr } = await supabase
+    const { data: payment, error: payErr } = await req.db
       .from('payments')
       .insert({ sale_id, amount, payment_method: 'deposit', confirmed_by: req.user.id, branch_id: effectiveBranchId })
       .select().single()
@@ -111,7 +111,7 @@ router.post('/deposit/confirm', async (req, res) => {
 
     let updatedSale = sale
     if (!hasTopUp) {
-      const { data: fullyPaidSale, error: saleErr } = await supabase
+      const { data: fullyPaidSale, error: saleErr } = await req.db
         .from('sales')
         .update({ amount_paid: amount, change_given: 0, payment_status: 'paid' })
         .eq('id', sale_id).select().single()

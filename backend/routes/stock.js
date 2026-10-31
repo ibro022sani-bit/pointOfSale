@@ -13,7 +13,7 @@ router.get('/branch/:branchId', async (req, res) => {
       return error(res, 'Unauthorized', 403)
     }
 
-    const { data, error: dbError } = await supabase
+    const { data, error: dbError } = await req.db
       .from('stock')
       .select('*, products(id, name, category, unit_of_measurement, price)')
       .eq('branch_id', req.params.branchId)
@@ -38,7 +38,7 @@ router.put('/branch/:branchId/product/:productId', requireRole('super_admin', 'a
     if (quantity !== undefined) updates.quantity = quantity
     if (low_stock_threshold !== undefined) updates.low_stock_threshold = low_stock_threshold
 
-    const { data: updated, error: dbError } = await supabase
+    const { data: updated, error: dbError } = await req.db
       .from('stock').update(updates).eq('branch_id', branchId).eq('product_id', productId).select().single()
 
     if (dbError) return error(res, 'Could not update stock', 500)
@@ -75,7 +75,7 @@ router.get('/restock', async (req, res) => {
   try {
     let { branch, from, to, payment_status } = req.query
     if (req.user.role !== 'super_admin') branch = req.user.branch_id
-    let query = supabase
+    let query = req.db
       .from('stock_receipts')
       .select('*, branches(name), suppliers(name), users:received_by(name), stock_receipt_items(*, products(name))')
       .order('created_at', { ascending: false })
@@ -110,7 +110,7 @@ router.post('/restock', requireRole('super_admin', 'admin'), async (req, res) =>
       const amountPaid = amount_paid_now ? Number(amount_paid_now) : 0
       const paymentStatus = amountPaid >= total_cost ? 'paid' : (amountPaid > 0 ? 'partial' : 'unpaid')
 
-      const { data: receipt, error: receiptErr } = await supabase
+      const { data: receipt, error: receiptErr } = await req.db
         .from('stock_receipts')
         .insert({ branch_id, supplier_id: supplier_id || null, received_by: req.user.id, total_cost, notes: notes || null, amount_paid: amountPaid, payment_status: paymentStatus })
         .select().single()
@@ -162,7 +162,7 @@ router.post('/restock/:id/pay', requireRole('super_admin', 'admin'), async (req,
     const newAmountPaid = Number(receiptRow.amount_paid) + Number(amount)
     const newStatus = newAmountPaid >= Number(receiptRow.total_cost) ? 'paid' : 'partial'
 
-    const { data: updated, error: dbError } = await supabase
+    const { data: updated, error: dbError } = await req.db
       .from('stock_receipts')
       .update({ amount_paid: newAmountPaid, payment_status: newStatus })
       .eq('id', id).select().single()
@@ -215,7 +215,7 @@ router.put('/restock/:id/items/:itemId', requireRole('super_admin'), async (req,
       }
     }
 
-    const { data: updatedItem, error: itemErr } = await supabase
+    const { data: updatedItem, error: itemErr } = await req.db
       .from('stock_receipt_items')
       .update({ quantity: newQuantity, cost_price: newCostPrice })
       .eq('id', itemId).select().single()
@@ -228,7 +228,7 @@ router.put('/restock/:id/items/:itemId', requireRole('super_admin'), async (req,
       ? 'paid'
       : (Number(receipt.amount_paid) > 0 ? 'partial' : 'unpaid')
 
-    const { data: updatedReceipt, error: receiptErr } = await supabase
+    const { data: updatedReceipt, error: receiptErr } = await req.db
       .from('stock_receipts')
       .update({ total_cost: newTotalCost, payment_status: newPaymentStatus })
       .eq('id', id).select().single()
@@ -255,7 +255,7 @@ router.get('/restock/:id', async (req, res) => {
   try {
     const { id } = req.params
 
-    const { data: receipt, error: dbError } = await supabase
+    const { data: receipt, error: dbError } = await req.db
       .from('stock_receipts')
       .select('*, branches(name), suppliers(name), users:received_by(name), stock_receipt_items(*, products(name)))')
       .eq('id', id).single()
@@ -266,7 +266,7 @@ router.get('/restock/:id', async (req, res) => {
       return error(res, 'Unauthorized', 403)
     }
 
-    const { data: payments } = await supabase
+    const { data: payments } = await req.db
       .from('stock_receipt_payments')
       .select('*, users:paid_by(name)')
       .eq('stock_receipt_id', id)
@@ -289,7 +289,7 @@ router.post('/restock/opening-balance', requireRole('super_admin'), async (req, 
     const amountPaid = amount_paid_now ? Number(amount_paid_now) : 0
     const paymentStatus = amountPaid >= total_cost ? 'paid' : (amountPaid > 0 ? 'partial' : 'unpaid')
 
-    const { data: receipt, error: receiptErr } = await supabase
+    const { data: receipt, error: receiptErr } = await req.db
       .from('stock_receipts')
       .insert({
         branch_id: null, supplier_id, received_by: req.user.id, total_cost,
@@ -315,7 +315,7 @@ router.post('/restock/opening-balance', requireRole('super_admin'), async (req, 
 router.get('/transfer', async (req, res) => {
   try {
     const { status } = req.query
-    let query = supabase
+    let query = req.db
       .from('stock_transfers')
       .select('*, from:from_branch_id(name), to:to_branch_id(name), stock_transfer_items(*, products(name)))')
       .order('created_at', { ascending: false })
@@ -350,7 +350,7 @@ router.post('/transfer', async (req, res) => {
       }
     }
 
-    const { data: transfer, error: transferErr } = await supabase
+    const { data: transfer, error: transferErr } = await req.db
       .from('stock_transfers').insert({ from_branch_id, to_branch_id, requested_by: req.user.id, notes: notes || null }).select().single()
 
     if (transferErr) return error(res, 'Could not create transfer', 500)
@@ -377,7 +377,7 @@ router.put('/transfer/:id/approve', requireRole('super_admin', 'admin'), async (
     if (!transfer) return error(res, 'Transfer not found', 404)
     if (transfer.status !== 'pending') return error(res, `Transfer is already ${transfer.status}`)
 
-    const { data: updated, error: dbError } = await supabase
+    const { data: updated, error: dbError } = await req.db
       .from('stock_transfers').update({ status: 'approved', approved_by: req.user.id }).eq('id', id).select().single()
 
     if (dbError) return error(res, 'Could not approve transfer', 500)

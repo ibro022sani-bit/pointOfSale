@@ -12,7 +12,7 @@ router.get('/', async (req, res) => {
     let { branch_id, category, date_from, date_to } = req.query
     if (req.user.role !== 'super_admin') branch_id = req.user.branch_id
 
-    let query = supabase
+    let query = req.db
       .from('expenses')
       .select('*, branches(name), users:recorded_by(name)')
       .order('created_at', { ascending: false })
@@ -38,7 +38,7 @@ router.post('/', async (req, res) => {
     if (!category) return error(res, 'category is required')
     if (!amount || amount <= 0) return error(res, 'A valid amount is required')
 
-    const { data: expense, error: dbError } = await supabase
+    const { data: expense, error: dbError } = await req.db
       .from('expenses')
       .insert({ branch_id, category, description: description || null, amount, recorded_by: req.user.id })
       .select().single()
@@ -54,7 +54,7 @@ router.post('/', async (req, res) => {
 
 router.get('/:id', async (req, res) => {
   try {
-    const { data, error: dbError } = await supabase
+    const { data, error: dbError } = await req.db
       .from('expenses').select('*, branches(name), users:recorded_by(name)').eq('id', req.params.id).single()
 
     if (dbError || !data) return error(res, 'Expense not found', 404)

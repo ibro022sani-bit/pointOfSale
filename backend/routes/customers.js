@@ -9,7 +9,7 @@ router.use(requireAuth)
 
 router.get('/', requireRole('super_admin', 'admin', 'cashier'), async (req, res) => {
   try {
-    const { data, error: dbError } = await supabase
+    const { data, error: dbError } = await req.db
       .from('customers')
       .select('id, name, phone, email, address, credit_limit, credit_status, notification_preference, created_at, credit_account:credit_accounts(current_balance, credit_limit, status), deposit_account:deposit_accounts(id, current_balance)')
       .order('name', { ascending: true })
@@ -29,7 +29,7 @@ router.post('/', requireRole('super_admin', 'admin', 'cashier'), async (req, res
     if (existing) return error(res, 'A customer with this phone number already exists')
 
 
-    const { data: customer, error: dbError } = await supabase
+    const { data: customer, error: dbError } = await req.db
       .from('customers')
       .insert({ name, phone, email: email || null, address: address || null })
       .select().single()
@@ -46,7 +46,7 @@ router.get('/search', requireRole('super_admin', 'admin', 'cashier'), async (req
     const { q } = req.query
     if (!q) return error(res, 'Query parameter q is required')
 
-    const { data, error: dbError } = await supabase
+    const { data, error: dbError } = await req.db
   .from('customers')
   .select('id, name, phone, email, address, credit_limit, credit_status, notification_preference, created_at, credit_account:credit_accounts(current_balance, credit_limit, status), deposit_account:deposit_accounts(id, current_balance)')
   .or(`name.ilike.%${q}%,phone.ilike.%${q}%`).limit(50)
@@ -60,7 +60,7 @@ router.get('/search', requireRole('super_admin', 'admin', 'cashier'), async (req
 
 router.get('/:id', requireRole('super_admin', 'admin', 'cashier'), async (req, res) => {
   try {
-    const { data, error: dbError } = await supabase
+    const { data, error: dbError } = await req.db
       .from('customers')
       .select('id, name, phone, email, address, credit_limit, credit_status, notification_preference, is_special_customer, created_at, credit_account:credit_accounts(current_balance, credit_limit, status), deposit_account:deposit_accounts(id, current_balance)')
       .eq('id', req.params.id).single()
@@ -91,7 +91,7 @@ router.put('/:id', requireRole('super_admin', 'admin', 'cashier'), async (req, r
 
 router.get('/:id/purchases', requireRole('super_admin', 'admin', 'cashier'), async (req, res) => {
   try {
-    const { data, error: dbError } = await supabase
+    const { data, error: dbError } = await req.db
       .from('sales')
       .select('*, branches(name), sale_items(*, products(name)))')
       .eq('customer_id', req.params.id)

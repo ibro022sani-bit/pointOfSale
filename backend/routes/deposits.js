@@ -21,7 +21,7 @@ const effectiveBranchId = req.user.role === 'super_admin' ? (branch_id || null) 
     let { data: account } = await req.db.from('deposit_accounts').select('*').eq('customer_id', customer_id).maybeSingle()
 
     if (!account) {
-      const { data: newAccount, error: openErr } = await supabase
+      const { data: newAccount, error: openErr } = await req.db
         .from('deposit_accounts')
         .insert({ customer_id, current_balance: 0, opened_by: req.user.id })
         .select().single()
@@ -31,7 +31,7 @@ const effectiveBranchId = req.user.role === 'super_admin' ? (branch_id || null) 
 
     const newBalance = Number(account.current_balance) + Number(amount)
 
-    const { data: updated, error: dbError } = await supabase
+    const { data: updated, error: dbError } = await req.db
       .from('deposit_accounts').update({ current_balance: newBalance }).eq('id', account.id).select().single()
 
     if (dbError) return error(res, 'Could not update deposit balance', 500)
@@ -59,7 +59,7 @@ router.get('/:id/deposit/transactions', async (req, res) => {
     const { data: account } = await req.db.from('deposit_accounts').select('id').eq('customer_id', customer_id).maybeSingle()
     if (!account) return success(res, [], 'No deposit account exists yet')
 
-    const { data, error: dbError } = await supabase
+    const { data, error: dbError } = await req.db
       .from('deposit_transactions')
       .select('id, type, amount, note, sale_id, balance_after, created_at, users:confirmed_by(name)')
       .eq('deposit_account_id', account.id)
@@ -87,7 +87,7 @@ router.post('/:id/deposit/adjust', requireRole('super_admin', 'admin'), async (r
     let { data: account } = await req.db.from('deposit_accounts').select('*').eq('customer_id', customer_id).maybeSingle()
 
     if (!account) {
-      const { data: newAccount, error: openErr } = await supabase
+      const { data: newAccount, error: openErr } = await req.db
         .from('deposit_accounts')
         .insert({ customer_id, current_balance: 0, opened_by: req.user.id })
         .select().single()
@@ -97,7 +97,7 @@ router.post('/:id/deposit/adjust', requireRole('super_admin', 'admin'), async (r
 
     const newBalance = Number(account.current_balance) + Number(amount)
 
-    const { data: updated, error: dbError } = await supabase
+    const { data: updated, error: dbError } = await req.db
       .from('deposit_accounts').update({ current_balance: newBalance }).eq('id', account.id).select().single()
 
     if (dbError) return error(res, 'Could not adjust balance', 500)
