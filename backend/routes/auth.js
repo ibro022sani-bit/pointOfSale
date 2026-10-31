@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 import crypto from 'crypto'
 import { rateLimit, rateLimitBody } from '../lib/rateLimit.js'
+import { DEFAULT_CATEGORIES, DEFAULT_UNITS } from '../lib/catalogDefaults.js'
 import supabase from '../lib/supabase.js'
 import { success, error } from '../lib/helpers.js'
 
@@ -79,6 +80,14 @@ router.post('/signup', rateLimit('signup', 5, 3600), async (req, res) => {
       .from('branches').insert({ tenant_id: tenantId, name: 'Main Branch', is_main: true }).select().single()
     if (branchErr) throw branchErr
 
+    // Starter categories and units so the new business can add products straight away
+    const { error: catErr } = await supabase
+      .from('product_categories').insert(DEFAULT_CATEGORIES.map((name) => ({ tenant_id: tenantId, name })))
+    if (catErr) throw catErr
+    const { error: unitErr } = await supabase
+      .from('product_units').insert(DEFAULT_UNITS.map((name) => ({ tenant_id: tenantId, name })))
+    if (unitErr) throw unitErr
+
     const hashedPassword = await bcrypt.hash(password, 10)
     const { error: userErr } = await supabase
       .from('users')
@@ -91,6 +100,8 @@ router.post('/signup', rateLimit('signup', 5, 3600), async (req, res) => {
     return success(res, { pending: true }, 'Account created. It will be activated after review.')
   } catch (err) {
     if (tenantId) {
+      await supabase.from('product_categories').delete().eq('tenant_id', tenantId)
+      await supabase.from('product_units').delete().eq('tenant_id', tenantId)
       await supabase.from('users').delete().eq('tenant_id', tenantId)
       await supabase.from('branches').delete().eq('tenant_id', tenantId)
       await supabase.from('tenants').delete().eq('id', tenantId)

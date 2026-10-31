@@ -4,10 +4,9 @@ import toast from 'react-hot-toast'
 import api from '../../services/api'
 import { useNavigate } from 'react-router-dom'
 import useAuthStore from '../../store/authStore'
+import AddInline from '../../components/common/AddInline'
 
-const CATEGORIES = ['drug', 'feed', 'accessory']
-const DRUG_TYPES = ['injection', 'powder', 'bolus', 'suspension', 'vaccine', 'syringe']
-const UNITS = ['bag', 'kg', 'g', 'bottle', 'sachet', 'vial', 'tablet', 'piece', 'carton', 'litre', 'ml', 'pack']
+const DRUG_TYPES = ['injection', 'powder', 'bolus', 'suspension', 'vaccine', 'syringe', 'tablet', 'capsule', 'syrup', 'cream', 'ointment', 'drops']
 
 const categoryColors = {
   drug: 'bg-red-100 text-red-700',
@@ -15,10 +14,25 @@ const categoryColors = {
   accessory: 'bg-blue-100 text-blue-700',
 }
 
+const PALETTE = [
+  'bg-purple-100 text-purple-700', 'bg-amber-100 text-amber-700', 'bg-pink-100 text-pink-700',
+  'bg-teal-100 text-teal-700', 'bg-indigo-100 text-indigo-700', 'bg-orange-100 text-orange-700',
+  'bg-cyan-100 text-cyan-700', 'bg-lime-100 text-lime-700',
+]
+// Keeps the original colors for drug/feed/accessory; gives every other category a stable color
+const colorFor = (name) => {
+  const key = (name || '').toLowerCase()
+  if (categoryColors[key]) return categoryColors[key]
+  let h = 0
+  for (const ch of key) h = (h * 31 + ch.charCodeAt(0)) >>> 0
+  return PALETTE[h % PALETTE.length]
+}
+
 function Products() {
   const [products, setProducts] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
+  const [categoryFilter, setCategoryFilter] = useState('')
   const [showModal, setShowModal] = useState(false)
   const [editing, setEditing] = useState(null)
   const navigate = useNavigate()
@@ -40,8 +54,11 @@ function Products() {
   useEffect(() => { fetchProducts() }, [])
 
   const filtered = products.filter((p) =>
-    p.name.toLowerCase().includes(search.toLowerCase())
+    p.name.toLowerCase().includes(search.toLowerCase()) &&
+    (!categoryFilter || p.category === categoryFilter)
   )
+
+  const categoryOptions = [...new Set(products.map((p) => p.category).filter(Boolean))].sort()
 
   const handleEdit = (product) => {
     setEditing(product)
@@ -95,6 +112,24 @@ function Products() {
         </div>
       </div>
 
+      {categoryOptions.length > 1 && (
+        <div className="flex flex-wrap gap-2">
+          {['', ...categoryOptions].map((c) => (
+            <button
+              key={c || 'all'}
+              onClick={() => setCategoryFilter(c)}
+              className={`px-3 py-1.5 rounded-full text-xs font-medium border capitalize transition ${
+                categoryFilter === c
+                  ? 'bg-green-600 text-white border-green-600'
+                  : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'
+              }`}
+            >
+              {c || 'All'}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Products Table */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         {loading ? (
@@ -129,7 +164,7 @@ function Products() {
                       {product.brand && <p className="text-xs text-gray-400">{product.brand}</p>}
                     </td>
                     <td className="px-5 py-3">
-                      <span className={`px-2 py-1 rounded-lg text-xs font-medium capitalize ${categoryColors[product.category]}`}>
+                      <span className={`px-2 py-1 rounded-lg text-xs font-medium capitalize ${colorFor(product.category)}`}>
                         {product.category}
                       </span>
                     </td>
@@ -187,7 +222,7 @@ function Products() {
 function ProductModal({ product, onClose, onSaved }) {
   const [form, setForm] = useState({
   name: product?.name || '',
-  category: product?.category || 'drug',
+  category: product?.category || '',
   drug_type: product?.drug_type || '',
   unit_of_measurement: product?.unit_of_measurement || '',
   weight: product?.weight || '',
@@ -197,6 +232,29 @@ function ProductModal({ product, onClose, onSaved }) {
   wholesale_price: product?.wholesale_price || '',
 })
   const [saving, setSaving] = useState(false)
+  const [catalog, setCatalog] = useState({ categories: [], units: [] })
+
+  useEffect(() => {
+    api.get('/api/catalog')
+      .then((res) => setCatalog(res.data.data))
+      .catch(() => toast.error('Could not load categories'))
+  }, [])
+
+  const CATEGORIES = catalog.categories.map((c) => c.name)
+  const UNITS = catalog.units.map((u) => u.name)
+  const isMedicine = !!catalog.categories.find((c) => c.name === form.category)?.is_medicine
+
+  const addCatalogItem = async (kind, name) => {
+    try {
+      const res = await api.post(`/api/catalog/${kind}`, { name })
+      const created = res.data.data
+      setCatalog((c) => ({ ...c, [kind]: [...c[kind], created] }))
+      return created.name
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Could not add')
+      return null
+    }
+  }
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value })
@@ -204,7 +262,7 @@ function ProductModal({ product, onClose, onSaved }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    if (!form.name || !form.price || !form.unit_of_measurement) {
+    if (!form.name || !form.price || !form.unit_of_measurement || !form.category) {
       toast.error('Please fill all required fields')
       return
     }
@@ -277,14 +335,21 @@ function ProductModal({ product, onClose, onSaved }) {
               onChange={handleChange}
               className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
             >
+              <option value="">Select category</option>
               {CATEGORIES.map((c) => (
                 <option key={c} value={c} className="capitalize">{c}</option>
               ))}
             </select>
           </div>
 
-          {/* Drug Type (only if category is drug) */}
-          {form.category === 'drug' && (
+          <AddInline
+            label="category"
+            onAdd={(n) => addCatalogItem('categories', n)}
+            onAdded={(n) => setForm((f) => ({ ...f, category: n }))}
+          />
+
+          {/* Drug type (only for medicine categories) */}
+          {isMedicine && (
             <div>
               <label className="block text-sm font-medium text-gray-600 mb-1">
                 Drug Type *
@@ -320,6 +385,12 @@ function ProductModal({ product, onClose, onSaved }) {
               ))}
             </select>
           </div>
+
+          <AddInline
+            label="unit"
+            onAdd={(n) => addCatalogItem('units', n)}
+            onAdded={(n) => setForm((f) => ({ ...f, unit_of_measurement: n }))}
+          />
 
           {/* Brand */}
           <div>

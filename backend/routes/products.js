@@ -2,6 +2,7 @@ import express from 'express'
 import supabase from '../lib/supabase.js'
 import { success, error } from '../lib/helpers.js'
 import { requireAuth, requireRole } from '../lib/middleware.js'
+import { resolveCatalog } from '../lib/catalog.js'
 
 const router = express.Router()
 router.use(requireAuth)
@@ -18,7 +19,10 @@ router.get('/', async (req, res) => {
 
 router.post('/', requireRole('super_admin'), async (req, res) => {
   try {
-    const { name, category, drug_type, unit_of_measurement, weight, brand, barcode, price, wholesale_price } = req.body
+    let { name, category, drug_type, unit_of_measurement, weight, brand, barcode, price, wholesale_price } = req.body
+    const resolved = await resolveCatalog(req, { category, unit_of_measurement, drug_type })
+    if (resolved.error) return error(res, resolved.error)
+    ;({ category, unit_of_measurement, drug_type } = resolved.values)
     if (!name || !category || !unit_of_measurement || price === undefined) {
       return error(res, 'name, category, unit_of_measurement and price are required')
     }
@@ -148,6 +152,17 @@ router.put('/:id', requireRole('super_admin'), async (req, res) => {
     const updates = {}
     for (const key of allowed) if (req.body[key] !== undefined) updates[key] = req.body[key]
     if (updates.drug_type === '') updates.drug_type = null
+    if (updates.category !== undefined || updates.unit_of_measurement !== undefined || updates.drug_type !== undefined) {
+      const resolved = await resolveCatalog(req, {
+        category: updates.category ?? existing.category,
+        unit_of_measurement: updates.unit_of_measurement ?? existing.unit_of_measurement,
+        drug_type: updates.drug_type !== undefined ? updates.drug_type : existing.drug_type,
+      })
+      if (resolved.error) return error(res, resolved.error)
+      if (updates.category !== undefined) updates.category = resolved.values.category
+      if (updates.unit_of_measurement !== undefined) updates.unit_of_measurement = resolved.values.unit_of_measurement
+      updates.drug_type = resolved.values.drug_type
+    }
     updates.updated_at = new Date()
 
     const { data: updated, error: dbError } = await req.db.from('products').update(updates).eq('id', id).select().single()

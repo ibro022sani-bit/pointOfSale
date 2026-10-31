@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
 import api from '../../services/api'
 import useAuthStore from '../../store/authStore'
+import CatalogManager from './CatalogManager'
 
 const inputClass =
   'w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-transparent'
@@ -102,6 +103,8 @@ function Settings() {
           {saving ? 'Saving…' : 'Save changes'}
         </button>
       </form>
+
+      <CatalogManager />
 
       {info && (
         <div className="bg-white rounded-2xl border p-6 space-y-3 text-sm">

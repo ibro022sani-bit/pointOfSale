@@ -12,6 +12,7 @@ import salesRoutes from '../routes/sales.js'
 import paymentRoutes from '../routes/payments.js'
 import cartRoutes from '../routes/carts.js'
 import settingsRoutes from '../routes/settings.js'
+import catalogRoutes from '../routes/catalog.js'
 import creditRoutes from '../routes/credit.js'
 import expenseRoutes from '../routes/expenses.js'
 import reportRoutes from '../routes/reports.js'
@@ -43,6 +44,7 @@ app.use('/api/sales', salesRoutes)
 app.use('/api/payments', paymentRoutes)
 app.use('/api/carts', cartRoutes)
 app.use('/api/settings', settingsRoutes)
+app.use('/api/catalog', catalogRoutes)
 app.use('/api/expenses', expenseRoutes)
 app.use('/api/reports', reportRoutes)
 app.use('/api/notifications', notificationRoutes)
