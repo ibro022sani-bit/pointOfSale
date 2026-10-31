@@ -29,7 +29,7 @@ router.post('/', async (req, res) => {
   try {
     const { name, email, phone, password, role, branch_id } = req.body
     if (!name || !email || !password || !role) return error(res, 'name, email, password and role are required')
-    if (password.length < 6) return error(res, 'Password must be at least 6 characters')
+    if (password.length < 8) return error(res, 'Password must be at least 8 characters')
     if (!['super_admin', 'admin', 'cashier'].includes(role)) return error(res, 'Invalid role')
 
     let finalBranchId = branch_id
@@ -179,7 +179,7 @@ router.put('/:id/reset-password', async (req, res) => {
     const { id } = req.params
     const { newPassword } = req.body
     if (!newPassword) return error(res, 'newPassword is required')
-    if (newPassword.length < 6) return error(res, 'Password must be at least 6 characters')
+    if (newPassword.length < 8) return error(res, 'Password must be at least 8 characters')
 
     const { data: user } = await req.db.from('users').select('id, branch_id').eq('id', id).single()
     if (!user) return error(res, 'Staff member not found', 404)

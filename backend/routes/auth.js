@@ -2,12 +2,13 @@ import express from 'express'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 import crypto from 'crypto'
+import { rateLimit, rateLimitBody } from '../lib/rateLimit.js'
 import supabase from '../lib/supabase.js'
 import { success, error } from '../lib/helpers.js'
 
 const router = express.Router()
 
-router.post('/staff/login', async (req, res) => {
+router.post('/staff/login', rateLimit('login', 20, 900), rateLimitBody('login-email', 'email', 10, 900), async (req, res) => {
   try {
     const { email, password } = req.body
     if (!email || !password) return error(res, 'Email and password are required')
@@ -48,7 +49,7 @@ router.post('/staff/login', async (req, res) => {
   }
 })
 
-router.post('/signup', async (req, res) => {
+router.post('/signup', rateLimit('signup', 5, 3600), async (req, res) => {
   let tenantId = null
   try {
     const { business_name, name, email, phone, password } = req.body

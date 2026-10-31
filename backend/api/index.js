@@ -20,7 +20,14 @@ import depositRoutes from '../routes/deposits.js'
 import platformRoutes from '../routes/platform.js'
 
 const app = express()
-app.use(cors())
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || '').split(',').map((s) => s.trim()).filter(Boolean)
+app.use(cors({
+  origin: (origin, cb) => {
+    // allow requests with no Origin header (server-to-server) and listed sites only
+    if (!origin || allowedOrigins.includes(origin)) return cb(null, true)
+    return cb(new Error('Not allowed by CORS'))
+  },
+}))
 app.use(express.json())
 
 app.use('/api/auth', authRoutes)

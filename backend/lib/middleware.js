@@ -2,10 +2,11 @@ import jwt from 'jsonwebtoken'
 import supabase from './supabase.js'
 import { tenantDb } from './tenantDb.js'
 
-// Tenant status is checked on EVERY request (cached 30s), so deactivating a
-// business locks out users who are already logged in, not just new logins.
+// Tenant status and user status are checked on EVERY request (cached 30s), so
+// deactivating a business or a staff member locks them out even if already logged in.
 const STATUS_TTL_MS = 30 * 1000
 const statusCache = new Map()
+const userCache = new Map()
 
 export function clearTenantStatusCache(tenantId) {
   statusCache.delete(tenantId)
@@ -19,6 +20,16 @@ async function getTenantStatus(tenantId) {
   const status = data?.status || 'missing'
   statusCache.set(tenantId, { status, at: Date.now() })
   return status
+}
+
+async function isUserActive(userId) {
+  const hit = userCache.get(userId)
+  if (hit && Date.now() - hit.at < STATUS_TTL_MS) return hit.active
+  const { data, error } = await supabase.from('users').select('is_active').eq('id', userId).maybeSingle()
+  if (error) throw error
+  const active = !!data?.is_active
+  userCache.set(userId, { active, at: Date.now() })
+  return active
 }
 
 const INACTIVE_MESSAGES = {
@@ -49,6 +60,9 @@ export async function requireAuth(req, res, next) {
         message: INACTIVE_MESSAGES[status] || INACTIVE_MESSAGES.suspended,
       })
     }
+    if (!(await isUserActive(user.id))) {
+      return res.status(401).json({ success: false, message: 'Your account has been deactivated.' })
+    }
   } catch (err) {
     return res.status(503).json({ success: false, message: 'Service temporarily unavailable. Please try again.' })
   }
@@ -59,12 +73,13 @@ export async function requireAuth(req, res, next) {
   next()
 }
 
-export function requirePlatformAdmin(req, res, next) {
+export async function requirePlatformAdmin(req, res, next) {
   try {
     const token = req.headers.authorization?.split(' ')[1]
     if (!token) return res.status(401).json({ success: false, message: 'No token provided' })
     const user = jwt.verify(token, process.env.JWT_SECRET)
     if (user.role !== 'platform_admin') return res.status(403).json({ success: false, message: 'Unauthorized' })
+    if (!(await isUserActive(user.id))) return res.status(401).json({ success: false, message: 'Account deactivated' })
     req.user = user
     next()
   } catch (err) {
