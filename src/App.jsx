@@ -5,6 +5,9 @@ import Login from './pages/auth/Login'
 import Signup from './pages/auth/Signup'
 import Tenants from './pages/platform/Tenants'
 import Settings from './pages/admin/Settings'
+import Home from './pages/Home'
+import Terms from './pages/legal/Terms'
+import Privacy from './pages/legal/Privacy'
 import AdminLayout from './components/common/AdminLayout'
 import CashierLayout from './components/common/CashierLayout'
 import Dashboard from './pages/admin/Dashboard'
@@ -101,6 +104,14 @@ function ProtectedRoute({ allowed, requireMainBranch, children }) {
   return children
 }
 
+function HomeRoute() {
+  const { isAuthenticated, user } = useAuthStore()
+  if (isAuthenticated) {
+    return <Navigate to={dashboardPathFor(user)} replace />
+  }
+  return <Home />
+}
+
 function RootRoute() {
   const { isAuthenticated, user } = useAuthStore()
   if (isAuthenticated) {
@@ -140,7 +151,9 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<RootRoute />} />
+        <Route path="/" element={<HomeRoute />} />
+        <Route path="/terms" element={<Terms />} />
+        <Route path="/privacy" element={<Privacy />} />
         <Route path="/login" element={<PublicOnlyRoute><Login /></PublicOnlyRoute>} />
         <Route path="/signup" element={<PublicOnlyRoute><Signup /></PublicOnlyRoute>} />
         <Route path="/platform" element={<ProtectedRoute allowed={['platform_admin']}><Tenants /></ProtectedRoute>} />
