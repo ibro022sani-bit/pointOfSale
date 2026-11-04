@@ -37,7 +37,7 @@ router.post('/staff/login', rateLimit('login', 20, 900), rateLimitBody('login-em
       tenant.status = 'deactivated'
     }
     if (tenant.status !== 'active') {
-      return error(res, tenant.status === 'pending' ? 'Your account is awaiting activation. Please contact support.' : 'This account has been deactivated. Please make payment to reactivate it.', 403)
+      return error(res, tenant.status === 'pending' ? 'Your account is awaiting activation. Please contact support.' : 'This account has been Suspended. Please make payment to reactivate it.', 403)
     }
 
     const token = jwt.sign(

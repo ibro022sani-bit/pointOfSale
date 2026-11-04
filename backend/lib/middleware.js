@@ -41,7 +41,7 @@ async function isUserActive(userId) {
 
 const INACTIVE_MESSAGES = {
   pending: 'Your account is awaiting activation. Please contact support.',
-  deactivated: 'This account has been deactivated. Please make payment to reactivate it.',
+  deactivated: 'This account has been Suspended. Please make payment to reactivate it.',
 }
 
 export async function requireAuth(req, res, next) {
@@ -68,7 +68,7 @@ export async function requireAuth(req, res, next) {
       })
     }
     if (!(await isUserActive(user.id))) {
-      return res.status(401).json({ success: false, message: 'Your account has been deactivated.' })
+      return res.status(401).json({ success: false, message: 'Your account has been Suspended.' })
     }
   } catch (err) {
     return res.status(503).json({ success: false, message: 'Service temporarily unavailable. Please try again.' })
