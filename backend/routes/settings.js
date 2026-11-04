@@ -2,6 +2,7 @@ import express from 'express'
 import supabase from '../lib/supabase.js'
 import { success, error } from '../lib/helpers.js'
 import { requireAuth, requireRole } from '../lib/middleware.js'
+import { GRACE_DAYS, deactivationDate } from '../lib/subscription.js'
 
 const router = express.Router()
 router.use(requireAuth)
@@ -14,7 +15,7 @@ router.get('/business', async (req, res) => {
       .eq('id', req.tenantId)
       .single()
     if (dbError || !data) return error(res, 'Could not fetch business profile', 500)
-    return success(res, data, 'Business profile fetched')
+    return success(res, { ...data, grace_days: GRACE_DAYS, deactivates_at: deactivationDate(data.paid_until) }, 'Business profile fetched')
   } catch (err) {
     return error(res, 'Server error', 500)
   }

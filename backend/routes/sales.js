@@ -54,6 +54,14 @@ router.get('/today', async (req, res) => {
 router.get('/', async (req, res) => {
   try {
     let { branch, status, from, to, customer } = req.query
+    branch = branch || req.query.branch_id
+    from = from || req.query.date_from
+    to = to || req.query.date_to
+    // A plain date (2026-10-31) means the whole day in Lagos time
+    if (/^\d{4}-\d{2}-\d{2}$/.test(from || '')) from = `${from}T00:00:00+01:00`
+    if (/^\d{4}-\d{2}-\d{2}$/.test(to || '')) to = `${to}T23:59:59+01:00`
+    // With no dates at all, show the last 31 days instead of every sale ever made
+    if (!from && !to) from = new Date(Date.now() - 31 * 24 * 60 * 60 * 1000).toISOString()
     if (req.user.role !== 'super_admin') branch = req.user.branch_id
 
     let query = req.db

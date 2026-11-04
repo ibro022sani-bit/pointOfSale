@@ -18,7 +18,8 @@ const sections = [
       'Account details: your business name, your name, email address and phone number, and a password, which we store only in a scrambled (hashed) form that we cannot read.',
       'Business records you enter: products, stock, sales, payments, expenses, staff accounts, and your customers\' names, phone numbers and addresses.',
       'Technical information: your IP address, device and browser details, and activity logs, used to keep the service secure and to prevent abuse such as repeated failed sign-ins.',
-      'Messages: details of SMS messages sent through the app.',
+      'Referral details: if you take part in our referral programme, your name, phone number and referral earnings.',
+      'Customer contact: when you tap SMS or WhatsApp to contact a customer, the message is prepared by the app but sent from your own phone and account. We only note the date a debt reminder was opened.',
     ],
   },
   {
@@ -30,7 +31,7 @@ const sections = [
   {
     heading: 'Who we share it with',
     body: [
-      `We use trusted service providers to run ${APP_NAME}: cloud hosting and database providers (currently Vercel and Supabase) and an SMS provider (currently Termii). They handle data only to provide their service to us. We may also share information when the law requires it.`,
+      `We use trusted service providers to run ${APP_NAME}: cloud hosting and database providers (currently Vercel and Supabase). They handle data only to provide their service to us. We may also share information when the law requires it.`,
       'Our providers may store or process data in other countries. We take reasonable steps to make sure it stays protected.',
     ],
   },

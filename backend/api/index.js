@@ -13,12 +13,14 @@ import paymentRoutes from '../routes/payments.js'
 import cartRoutes from '../routes/carts.js'
 import settingsRoutes from '../routes/settings.js'
 import catalogRoutes from '../routes/catalog.js'
+import healthRoutes from '../routes/health.js'
 import creditRoutes from '../routes/credit.js'
 import expenseRoutes from '../routes/expenses.js'
 import reportRoutes from '../routes/reports.js'
-import notificationRoutes from '../routes/notifications.js'
 import depositRoutes from '../routes/deposits.js'
 import platformRoutes from '../routes/platform.js'
+import referralRoutes from '../routes/referrals.js'
+import referrerPortalRoutes from '../routes/referrerPortal.js'
 
 const app = express()
 const allowedOrigins = (process.env.ALLOWED_ORIGINS || '').split(',').map((s) => s.trim()).filter(Boolean)
@@ -32,6 +34,8 @@ app.use(cors({
 app.use(express.json())
 
 app.use('/api/auth', authRoutes)
+app.use('/api/platform/referrals', referralRoutes)
+app.use('/api/referrer-portal', referrerPortalRoutes)
 app.use('/api/platform', platformRoutes)
 app.use('/api/staff', staffRoutes)
 app.use('/api/customers', customerRoutes)
@@ -45,9 +49,10 @@ app.use('/api/payments', paymentRoutes)
 app.use('/api/carts', cartRoutes)
 app.use('/api/settings', settingsRoutes)
 app.use('/api/catalog', catalogRoutes)
+app.use('/api/health', healthRoutes)
 app.use('/api/expenses', expenseRoutes)
 app.use('/api/reports', reportRoutes)
-app.use('/api/notifications', notificationRoutes)
+
 app.use('/api/customers', creditRoutes)
 app.use('/api/customers', depositRoutes)
 

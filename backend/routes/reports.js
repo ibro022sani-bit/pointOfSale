@@ -149,7 +149,7 @@ router.get('/debt', async (req, res) => {
   try {
     const { data, error: dbError } = await req.db
       .from('credit_accounts')
-      .select('*, customers(name, phone)')
+      .select('*, customers(name, phone, debt_reminders(last_sent_at))')
       .gt('current_balance', 0)
       .order('current_balance', { ascending: false })
 

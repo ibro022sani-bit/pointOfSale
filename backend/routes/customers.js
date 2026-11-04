@@ -2,7 +2,7 @@ import express from 'express'
 import supabase from '../lib/supabase.js'
 import { success, error } from '../lib/helpers.js'
 import { requireAuth, requireRole } from '../lib/middleware.js'
-import { sendSMS } from '../lib/termii.js'
+
 
 const router = express.Router()
 router.use(requireAuth)
@@ -104,33 +104,19 @@ router.get('/:id/purchases', requireRole('super_admin', 'admin', 'cashier'), asy
   }
 })
 
-router.post('/:id/reminders/send-now', requireRole('super_admin', 'admin'), async (req, res) => {
+// Records that a debt reminder was opened for this customer (the message itself is sent from the staff member's phone)
+router.post('/:id/reminders/log', requireRole('super_admin', 'admin'), async (req, res) => {
   try {
     const { id } = req.params
-    const { data: customer } = await req.db.from('customers').select('*').eq('id', id).single()
+    const { data: customer } = await req.db.from('customers').select('id').eq('id', id).single()
     if (!customer) return error(res, 'Customer not found', 404)
 
-    const { data: account } = await req.db.from('credit_accounts').select('*').eq('customer_id', id).maybeSingle()
-    if (!account || Number(account.current_balance) <= 0) {
-      return error(res, 'This customer has no outstanding balance')
-    }
-
-    const { data: tenant } = await supabase.from('tenants').select('name, sms_sender_id').eq('id', req.tenantId).single()
-    const message = `Hi ${customer.name}, this is a reminder from ${tenant?.name || 'us'} that you have an outstanding balance of ₦${Number(account.current_balance).toLocaleString()}. Kindly settle at your earliest convenience.`
-
-    const sent = await sendSMS(customer.phone, message, tenant?.sms_sender_id)
-
-    await req.db.from('notifications').insert({
-      type: 'debt_reminder', recipient_type: 'customer', recipient_id: id,
-      message, channel: 'sms', status: sent ? 'sent' : 'failed'
-    })
-
-    await req.db.from('debt_reminders').upsert({
-      customer_id: id, last_sent_at: new Date(), is_active: true
-    }, { onConflict: 'customer_id' })
-
-    if (!sent) return error(res, 'Reminder could not be sent — SMS delivery failed', 500)
-    return success(res, {}, 'Reminder sent')
+    const { error: dbError } = await req.db.from('debt_reminders').upsert(
+      { customer_id: id, last_sent_at: new Date().toISOString(), is_active: true },
+      { onConflict: 'customer_id' }
+    )
+    if (dbError) return error(res, 'Could not record reminder', 500)
+    return success(res, {}, 'Reminder recorded')
   } catch (err) {
     return error(res, 'Server error', 500)
   }

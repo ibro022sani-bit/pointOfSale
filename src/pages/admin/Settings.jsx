@@ -119,11 +119,8 @@ function Settings() {
             <span className="text-gray-500">Paid until</span>
             <span className="text-gray-800">{fmtDate(info.paid_until)}</span>
           </div>
-          <div className="flex justify-between">
-            <span className="text-gray-500">SMS sender name</span>
-            <span className="text-gray-800">{info.sms_sender_id || 'Default'}</span>
-          </div>
-          <p className="text-xs text-gray-400">To change your SMS sender name or subscription, please contact support.</p>
+
+          <p className="text-xs text-gray-400">To change your subscription, please contact support.</p>
         </div>
       )}
     </div>

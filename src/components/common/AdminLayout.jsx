@@ -7,6 +7,8 @@ import {
   Wallet, Receipt, ArrowLeftRight, PackageCheck
 } from 'lucide-react'
 import useAuthStore from '../../store/authStore'
+import SubscriptionBanner from './SubscriptionBanner'
+import ChangePasswordButton from './ChangePasswordButton'
 import useBranchStore from '../../store/branchStore'
 import toast from 'react-hot-toast'
 
@@ -164,6 +166,7 @@ function AdminLayout({ children }) {
             <LogOut size={16} />
             Logout
           </button>
+          <ChangePasswordButton />
         </div>
       </aside>
 
@@ -191,6 +194,7 @@ function AdminLayout({ children }) {
 
         {/* Page Content */}
         <main className="flex-1 p-4 md:p-6 overflow-y-auto">
+          <SubscriptionBanner />
           {children}
         </main>
 

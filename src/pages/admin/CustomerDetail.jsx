@@ -7,6 +7,7 @@ import useAuthStore from '../../store/authStore'
 import useBranchStore from '../../store/branchStore'
 import useOnlineStatus from '../../hooks/useOnlineStatus'
 import { queueRepayment } from '../../services/offlineSync'
+import ContactButtons from '../../components/common/ContactButtons'
 
 function CustomerDetail() {
   const { id } = useParams()
@@ -145,10 +146,14 @@ function CustomerDetail() {
                 </span>
               )}
             </div>
-            <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
+            <div className="flex flex-wrap items-center gap-4 mt-2 text-sm text-gray-500">
               {customer.phone && (
-                <span className="flex items-center gap-1.5"><Phone size={14} /> {customer.phone}</span>
+                <>
+                  <span className="flex items-center gap-1.5"><Phone size={14} /> {customer.phone}</span>
+                  <ContactButtons customerId={customer.id} name={customer.name} phone={customer.phone} balance={Number(customer.credit_account?.current_balance || 0)} />
+                </>
               )}
+            
               {customer.email && (
                 <span className="flex items-center gap-1.5"><Mail size={14} /> {customer.email}</span>
               )}

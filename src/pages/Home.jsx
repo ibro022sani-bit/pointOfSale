@@ -13,7 +13,7 @@ const FEATURES = [
   { icon: Package, title: 'Stock control', text: 'Track quantities, get low-stock warnings, and record every delivery from your suppliers with cost prices.' },
   { icon: Truck, title: 'Branch transfers', text: 'Move stock between branches with a request, approval and receipt trail so nothing goes missing.' },
   { icon: Wallet, title: 'Credit and deposits', text: 'Let trusted customers buy on credit or keep a deposit balance, with limits and a full history of every payment.' },
-  { icon: MessageSquare, title: 'SMS reminders', text: 'Send payment reminders to customers who owe you, straight from the app.' },
+  { icon: MessageSquare, title: 'Customer reminders', text: 'Remind customers who owe you in one tap, with a ready-written message sent through your own SMS or WhatsApp.' },
   { icon: PieChart, title: 'Reports and expenses', text: 'See daily collections, profit, outstanding payments and expenses, by branch or across the whole business.' },
   { icon: Users, title: 'Staff roles', text: 'Give owners, managers and cashiers the right level of access, and switch off a staff account whenever you need to.' },
   { icon: Lock, title: 'Your data stays yours', text: 'Every business is kept completely separate. Nobody else can see your sales, customers or stock.' },

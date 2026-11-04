@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Eye, EyeOff, Store } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import useAuthStore from '../../store/authStore'
 import { signup } from '../../services/authService'
 
@@ -14,6 +14,7 @@ const schema = z
     name: z.string().min(2, 'Enter your full name'),
     email: z.string().email('Enter a valid email address'),
     phone: z.string().optional(),
+    referral_code: z.string().optional(),
     password: z.string().min(8, 'Password must be at least 8 characters'),
     confirm: z.string(),
   })
@@ -26,6 +27,8 @@ const inputClass = (err) =>
 
 function Signup() {
   const [showPassword, setShowPassword] = useState(false)
+  const [searchParams] = useSearchParams()
+  const initialRef = (searchParams.get('ref') || '').toUpperCase()
   const [submitted, setSubmitted] = useState(false)
   const navigate = useNavigate()
   const login = useAuthStore((s) => s.login)
@@ -33,7 +36,7 @@ function Signup() {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm({ resolver: zodResolver(schema) })
+  } = useForm({ resolver: zodResolver(schema), defaultValues: { referral_code: initialRef } })
 
   const onSubmit = async (data) => {
     try {
@@ -101,6 +104,10 @@ function Signup() {
             <div>
               <label className="block text-sm font-medium text-gray-600 mb-1">Phone (optional)</label>
               <input type="tel" {...register('phone')} className={inputClass(false)} />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-600 mb-1">Referral code (optional)</label>
+              <input {...register('referral_code')} placeholder="e.g. K7M2QX" className={`${inputClass(false)} uppercase`} />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-600 mb-1">Password</label>

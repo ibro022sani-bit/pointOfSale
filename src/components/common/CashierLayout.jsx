@@ -4,6 +4,8 @@ import {
   LayoutDashboard, ShoppingCart, Receipt, Users, Wallet, LogOut, Menu, X
 } from 'lucide-react'
 import useAuthStore from '../../store/authStore'
+import SubscriptionBanner from './SubscriptionBanner'
+import ChangePasswordButton from './ChangePasswordButton'
 import toast from 'react-hot-toast'
 
 const navItems = [
@@ -90,6 +92,7 @@ function CashierLayout({ children }) {
             <LogOut size={16} />
             Logout
           </button>
+          <ChangePasswordButton />
         </div>
       </aside>
 
@@ -105,6 +108,7 @@ function CashierLayout({ children }) {
         </header>
 
         <main className="flex-1 p-4 md:p-6 overflow-y-auto">
+          <SubscriptionBanner />
           {children}
         </main>
       </div>

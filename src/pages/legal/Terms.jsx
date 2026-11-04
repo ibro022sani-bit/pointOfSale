@@ -23,7 +23,7 @@ const sections = [
     heading: 'Subscription and payment',
     body: [
       `Access to ${APP_NAME} is paid for in advance for the period we agree with you. Your account shows a "paid until" date.`,
-      'If payment is not received by the end of the paid period, we may deactivate your account. When your account is deactivated, you and your staff cannot sign in or sync data until payment is made and we reactivate it.',
+      'If payment is not received by the end of the paid period, we allow a short grace period (currently 3 days). After that your account is deactivated automatically. When your account is deactivated, you and your staff cannot sign in or sync data until payment is made and we reactivate it.',
       'Fees are not refundable, except where the law requires otherwise.',
     ],
   },
@@ -45,20 +45,28 @@ const sections = [
   {
     heading: 'Acceptable use',
     body: [
-      'You must not use the service for anything unlawful, try to access another business\'s data, interfere with or overload the service, copy or reverse engineer the software, or use the SMS feature to send spam or unwanted messages.',
+      'You must not use the service for anything unlawful, try to access another business\'s data, interfere with or overload the service, copy or reverse engineer the software, or use the messaging links to send spam or unwanted messages.',
       'We may suspend an account that breaks these rules.',
     ],
   },
   {
-    heading: 'SMS messages',
+    heading: 'Contacting your customers',
     body: [
-      'Messages such as payment reminders are sent through a third-party SMS provider. You are responsible for the content of the messages you send and for having your customers\' permission to contact them. We may limit SMS usage to prevent abuse.',
+      'Reminders and other messages to your customers are opened in your own phone\'s SMS or WhatsApp app and are sent from your own number or account, not by us. You are responsible for the content of the messages you send and for having your customers\' permission to contact them.',
     ],
   },
   {
     heading: 'Offline use and availability',
     body: [
       `${APP_NAME} is designed to keep working without internet and to sync when a connection returns. We work to keep the service available, but we cannot promise it will always be uninterrupted or error-free. Please keep your own records of anything critical to your business.`,
+    ],
+  },
+  {
+    heading: 'Referral programme',
+    body: [
+      'Where we run a referral programme, we decide the reward and may change it at any time. The reward that applies is the one set when the business you referred makes its first payment to us.',
+      'Rewards are earned only for genuine new businesses. We may withhold or cancel a reward if we believe a referral is fake, was made by the business itself, or breaks these terms.',
+      'Rewards are given in the form we choose, as money or as free subscription time, and cannot be transferred.',
     ],
   },
   {

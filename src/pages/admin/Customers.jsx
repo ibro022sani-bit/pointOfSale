@@ -6,6 +6,7 @@ import api from '../../services/api'
 import useOnlineStatus from '../../hooks/useOnlineStatus'
 import { refreshCustomerCache, searchLocalCustomers as searchCachedCustomers, queueCustomerEdit } from '../../services/offlineSync'
 import db from '../../db'
+import ContactButtons from '../../components/common/ContactButtons'
 
 function Customers() {
   const [customers, setCustomers] = useState([])
@@ -135,6 +136,7 @@ function Customers() {
                   <div className="flex items-center gap-2 text-sm text-gray-500">
                     <Phone size={14} className="text-gray-400" />
                     <span>{customer.phone}</span>
+                    <span className="ml-auto"><ContactButtons name={customer.name} phone={customer.phone} compact /></span>
                   </div>
                 )}
                 {customer.email && (

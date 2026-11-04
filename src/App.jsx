@@ -4,6 +4,8 @@ import Landing from './pages/Landing'
 import Login from './pages/auth/Login'
 import Signup from './pages/auth/Signup'
 import Tenants from './pages/platform/Tenants'
+import Referrals from './pages/platform/Referrals'
+import ReferrerPortal from './pages/ReferrerPortal'
 import Settings from './pages/admin/Settings'
 import Home from './pages/Home'
 import Terms from './pages/legal/Terms'
@@ -153,10 +155,12 @@ function App() {
       <Routes>
         <Route path="/" element={<HomeRoute />} />
         <Route path="/terms" element={<Terms />} />
+        <Route path="/r/:token" element={<ReferrerPortal />} />
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/login" element={<PublicOnlyRoute><Login /></PublicOnlyRoute>} />
         <Route path="/signup" element={<PublicOnlyRoute><Signup /></PublicOnlyRoute>} />
         <Route path="/platform" element={<ProtectedRoute allowed={['platform_admin']}><Tenants /></ProtectedRoute>} />
+        <Route path="/platform/referrals" element={<ProtectedRoute allowed={['platform_admin']}><Referrals /></ProtectedRoute>} />
 
         {/* Admin + Super Admin Routes */}
         <Route path="/admin/dashboard" element={

@@ -6,6 +6,7 @@ import useAuthStore from '../../store/authStore'
 import useBranchStore from '../../store/branchStore'
 import useOnlineStatus from '../../hooks/useOnlineStatus'
 import { queueRepayment } from '../../services/offlineSync'
+import ContactButtons from '../../components/common/ContactButtons'
 
 function CreditDebt() {
   const [customers, setCustomers] = useState([])
@@ -105,7 +106,12 @@ function CreditDebt() {
                         <span className="font-medium text-gray-800">{customer.name}</span>
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-gray-500">{customer.phone}</td>
+                    <td className="px-4 py-3 text-gray-500">
+                      <div className="flex items-center gap-2">
+                        <span>{customer.phone}</span>
+                        <ContactButtons customerId={customer.id} name={customer.name} phone={customer.phone} balance={balance} compact />
+                      </div>
+                    </td>
                     <td className="px-4 py-3 text-right">
                       <span className={`font-semibold ${balance > 0 ? 'text-red-500' : 'text-gray-800'}`}>
                         ₦{balance.toLocaleString()}
