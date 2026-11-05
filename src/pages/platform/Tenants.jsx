@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import toast from 'react-hot-toast'
-import { LogOut, Check, Ban, RefreshCw } from 'lucide-react'
+import { LogOut, Check, Ban, RefreshCw, Download } from 'lucide-react'
 import api from '../../services/api'
 import useAuthStore from '../../store/authStore'
+import { downloadBackup } from '../../services/backup'
 
 const DAY = 24 * 60 * 60 * 1000
 const GRACE_DAYS = 3 // keep in step with GRACE_DAYS in backend/lib/subscription.js
@@ -51,6 +52,9 @@ function Tenants() {
 
   // payment history window
   const [history, setHistory] = useState(null) // { tenant, rows }
+
+  // backup progress window
+  const [backup, setBackup] = useState(null) // { label, done, total, current }
 
   const [saving, setSaving] = useState(false)
   const logout = useAuthStore((s) => s.logout)
@@ -135,6 +139,31 @@ function Tenants() {
     }
   }
 
+  // tenant = one business, or null for a backup of everything
+  const runBackup = async (tenant) => {
+    if (backup) return
+    const label = tenant ? tenant.name : 'All businesses'
+    setBackup({ label, done: 0, total: 1, current: 'Starting…' })
+    try {
+      const result = await downloadBackup({
+        tenantId: tenant ? tenant.id : null,
+        onProgress: (p) => setBackup({ label, ...p }),
+      })
+      if (result.problems.length > 0) {
+        toast.error(
+          `Backup downloaded, but ${result.problems.length} problem${result.problems.length > 1 ? 's were' : ' was'} found. Open summary.txt inside the file.`,
+          { duration: 9000 }
+        )
+      } else {
+        toast.success('Backup downloaded')
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Backup failed. Please try again.')
+    } finally {
+      setBackup(null)
+    }
+  }
+
   const shown = tenants.filter((t) => {
     if (filter === 'all') return true
     if (filter === 'due') return isDueSoon(t)
@@ -151,6 +180,13 @@ function Tenants() {
           <p className="text-xs text-gray-500">Platform control panel</p>
         </div>
         <div className="flex items-center gap-3">
+          <button
+            onClick={() => runBackup(null)}
+            disabled={!!backup}
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-gray-700 hover:text-gray-900 disabled:opacity-50"
+          >
+            <Download size={16} /> Full backup
+          </button>
           <Link to="/platform/referrals" className="text-sm font-medium text-green-700 hover:underline">Referrals</Link>
           <button onClick={load} className="p-2 text-gray-500 hover:text-gray-800" title="Refresh"><RefreshCw size={18} /></button>
           <button onClick={() => { logout(); navigate('/login') }} className="flex items-center gap-2 text-sm text-gray-600 hover:text-red-600">
@@ -222,6 +258,13 @@ function Tenants() {
                     <button onClick={() => openHistory(t)} className="text-xs text-gray-500 hover:text-gray-800 mr-3">
                       History
                     </button>
+                    <button
+                      onClick={() => runBackup(t)}
+                      disabled={!!backup}
+                      className="inline-flex items-center gap-1 text-xs text-gray-500 hover:text-gray-800 mr-3 disabled:opacity-50"
+                    >
+                      <Download size={13} /> Backup
+                    </button>
                     {t.status === 'active' ? (
                       <>
                         <button onClick={() => openStatusModal(t, 'active')} className="text-xs text-gray-500 hover:text-gray-800 mr-3">Edit</button>
@@ -241,6 +284,27 @@ function Tenants() {
           </table>
         </div>
       </main>
+
+      {/* Backup progress */}
+      {backup && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-sm">
+            <h2 className="text-lg font-semibold text-gray-800">Creating backup</h2>
+            <p className="text-sm text-gray-500">{backup.label}</p>
+            <div className="mt-4 h-2 bg-gray-100 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-green-600 transition-all"
+                style={{ width: `${Math.round((backup.done / Math.max(1, backup.total)) * 100)}%` }}
+              />
+            </div>
+            <p className="text-xs text-gray-500 mt-2">{backup.done} of {backup.total} tables · {backup.current}</p>
+            <p className="text-xs text-gray-400 mt-4">
+              Please keep this page open. The file downloads by itself when it is ready. Store it somewhere safe:
+              it contains customer details and scrambled staff passwords.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Record payment */}
       {payModal && (

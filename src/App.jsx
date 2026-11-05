@@ -24,7 +24,6 @@ import useBranchStore from './store/branchStore'
 import Stock from './pages/admin/Stock'
 import SalesHistory from './pages/admin/SalesHistory'
 import Customers from './pages/admin/Customers'
-import LooseCart from './pages/cashier/LooseCart'
 import CashierDashboard from './pages/cashier/CashierDashboard'
 import CreditDebt from './pages/admin/CreditDebt'
 import Deposits from './pages/admin/Deposits'
@@ -235,19 +234,12 @@ function App() {
         <Route path="/admin/customers/:id" element={
           <ProtectedRoute allowed={['super_admin', 'admin']}><AdminPage><CustomerDetail /></AdminPage></ProtectedRoute>
         } />
-        <Route path="/admin/cart" element={
-          <ProtectedRoute allowed={['super_admin', 'admin']}><AdminPage><LooseCart /></AdminPage></ProtectedRoute>
-        } />
-
         {/* Cashier Routes */}
         <Route path="/cashier/dashboard" element={
           <ProtectedRoute allowed={['cashier']}><CashierPage><CashierDashboard /></CashierPage></ProtectedRoute>
         } />
         <Route path="/cashier/pos" element={
           <ProtectedRoute allowed={['cashier']}><CashierPage><POS /></CashierPage></ProtectedRoute>
-        } />
-        <Route path="/cashier/cart" element={
-          <ProtectedRoute allowed={['cashier']}><CashierPage><LooseCart /></CashierPage></ProtectedRoute>
         } />
         <Route path="/cashier/sales" element={
           <ProtectedRoute allowed={['cashier']}><CashierPage><SalesHistory /></CashierPage></ProtectedRoute>

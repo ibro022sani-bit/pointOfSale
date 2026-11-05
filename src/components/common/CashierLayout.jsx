@@ -11,7 +11,6 @@ import toast from 'react-hot-toast'
 const navItems = [
   { label: 'Dashboard', icon: LayoutDashboard, path: '/cashier/dashboard' },
   { label: 'POS / New Sale', icon: ShoppingCart, path: '/cashier/pos' },
-  { label: 'Loose Cart', icon: ShoppingCart, path: '/cashier/cart' },
   { label: "Today's Sales", icon: Receipt, path: '/cashier/sales' },
   { label: 'Customers', icon: Users, path: '/cashier/customers' },
   { label: 'Credit & Debt', icon: Wallet, path: '/cashier/credit' },

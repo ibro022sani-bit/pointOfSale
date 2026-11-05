@@ -24,7 +24,6 @@ const navItems = [
     items: [
       { label: 'POS / New Sale', icon: ShoppingCart, path: '/admin/pos', roles: ['super_admin', 'admin'] },
       { label: 'Sales History', icon: Receipt, path: '/admin/sales', roles: ['super_admin', 'admin'] },
-      { label: 'Loose Cart', icon: ShoppingCart, path: '/admin/cart', roles: ['super_admin', 'admin'] },
     ]
   },
   {

@@ -47,4 +47,14 @@ db.version(4).stores({
   pending_repayments: 'offline_id, customer_id, status, created_at',
 })
 
-export default db
+   // v5: the loose cart was removed from the app, so its local tables are dropped.
+   // (This also discards any cart actions that were still waiting to sync.)
+   db.version(5).stores({
+     carts: null,
+     cart_items: null,
+     cart_cache: null,
+     pending_cart_items: null,
+     pending_cart_close: null,
+   })
+
+   export default db
