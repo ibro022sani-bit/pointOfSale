@@ -47,7 +47,7 @@ async function fetchTable(name, tenantId) {
 }
 
 // Turns the downloaded tables into the files that go in the ZIP, plus a plain-language summary
-export function buildBackupFiles({ plan, results, failed, now = new Date() }) {
+export function buildBackupFiles({ plan, results, failed, schemaSql = null, now = new Date() }) {
   const { scope, business, tables, counts } = plan
   const files = {}
   const problems = []
@@ -71,6 +71,13 @@ export function buildBackupFiles({ plan, results, failed, now = new Date() }) {
     rowLines.push(`  ${name}: ${rows.length}${note}`)
   }
 
+  // The database structure, so a backup can rebuild everything from nothing
+  if (schemaSql) {
+    files['schema.sql'] = strToU8(schemaSql)
+  } else if (scope === 'all') {
+    problems.push('schema.sql: could not be created (a full backup needs it to rebuild from nothing)')
+  }
+
   const summary = [
     `${APP_NAME} backup`,
     `Scope: ${scope === 'business' ? `One business (${business})` : 'All businesses'}`,
@@ -84,9 +91,12 @@ export function buildBackupFiles({ plan, results, failed, now = new Date() }) {
       : ['PROBLEMS FOUND. This backup may be incomplete:', ...problems.map((p) => `  - ${p}`),
          '(A small difference can simply mean sales were made while the backup was running. Run it again to be sure.)'].join('\n'),
     '',
+    schemaSql ? 'Schema: included (schema.sql).' : 'Schema: NOT included.',
+    '',
     'Inside this ZIP:',
     '  json/  an exact copy of every table (this is what a restore uses)',
     '  csv/   the same data for opening in Excel',
+    '  schema.sql  the database structure (needed to rebuild from nothing)',
     '',
     'Keep this file safe. It contains customer names and phone numbers, and staff passwords in',
     'scrambled form. Do not send it by WhatsApp or email.',
@@ -112,6 +122,15 @@ export async function downloadBackup({ tenantId = null, onProgress = () => {}, s
   const planRes = await api.get('/api/platform/backup/plan', { params: tenantId ? { tenant: tenantId } : {} })
   const plan = planRes.data.data
 
+  // The database structure, so a backup can rebuild everything from nothing
+  let schemaSql = null
+  try {
+    const schemaRes = await api.get('/api/platform/backup/schema')
+    schemaSql = schemaRes.data.data.sql
+  } catch {
+    schemaSql = null
+  }
+
   const results = {}
   const failed = []
   const queue = [...plan.tables]
@@ -134,7 +153,7 @@ export async function downloadBackup({ tenantId = null, onProgress = () => {}, s
   await Promise.all(Array.from({ length: PARALLEL }, worker))
 
   onProgress({ done: plan.tables.length, total: plan.tables.length, current: 'Packing the file…' })
-  const { files, problems } = buildBackupFiles({ plan, results, failed })
+  const { files, problems } = buildBackupFiles({ plan, results, failed, schemaSql })
 
   const zipped = await new Promise((resolve, reject) =>
     zip(files, { level: 6 }, (err, data) => (err ? reject(err) : resolve(data)))

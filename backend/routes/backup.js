@@ -49,6 +49,17 @@ router.get('/plan', async (req, res) => {
   }
 })
 
+// The database structure, as SQL
+router.get('/schema', async (req, res) => {
+  try {
+    const { data, error: rpcErr } = await supabase.rpc('backup_schema_sql')
+    if (rpcErr) return error(res, 'Could not read the database structure', 500)
+    return success(res, { sql: data }, 'Schema')
+  } catch (err) {
+    return error(res, 'Server error', 500)
+  }
+})
+
 // One page of one table
 router.get('/table/:name', async (req, res) => {
   try {

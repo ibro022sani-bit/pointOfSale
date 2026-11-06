@@ -34,6 +34,15 @@ const previewEnd = (tenant, months) => {
 }
 
 const inputClass = 'w-full px-3 py-2 border border-gray-200 rounded-lg text-sm'
+
+const LAST_FULL_KEY = 'kasuwana_last_full_backup'
+const agoText = (iso) => {
+  if (!iso) return 'never'
+  const days = Math.floor((Date.now() - new Date(iso).getTime()) / DAY)
+  if (days <= 0) return 'today'
+  if (days === 1) return 'yesterday'
+  return `${days} days ago`
+}
 const EMPTY_PAY = { amount: '', months: 1, payment_method: 'transfer', reference: '', note: '' }
 
 function Tenants() {
@@ -55,6 +64,7 @@ function Tenants() {
 
   // backup progress window
   const [backup, setBackup] = useState(null) // { label, done, total, current }
+  const [lastFull, setLastFull] = useState(() => localStorage.getItem(LAST_FULL_KEY))
 
   const [saving, setSaving] = useState(false)
   const logout = useAuthStore((s) => s.logout)
@@ -156,6 +166,11 @@ function Tenants() {
         )
       } else {
         toast.success('Backup downloaded')
+        if (!tenant) {
+          const now = new Date().toISOString()
+          localStorage.setItem(LAST_FULL_KEY, now)
+          setLastFull(now)
+        }
       }
     } catch (err) {
       toast.error(err.response?.data?.message || 'Backup failed. Please try again.')
@@ -170,6 +185,7 @@ function Tenants() {
     return t.status === filter
   })
   const pendingCount = tenants.filter((t) => t.status === 'pending').length
+  const staleFull = !lastFull || Date.now() - new Date(lastFull).getTime() > 7 * DAY
   const dueCount = tenants.filter(isDueSoon).length
 
   return (
@@ -186,6 +202,9 @@ function Tenants() {
             className="inline-flex items-center gap-1.5 text-sm font-medium text-gray-700 hover:text-gray-900 disabled:opacity-50"
           >
             <Download size={16} /> Full backup
+            <span className={`ml-1 text-[11px] font-normal ${staleFull ? 'text-red-500' : 'text-gray-400'}`}>
+              (last: {agoText(lastFull)})
+            </span>
           </button>
           <Link to="/platform/referrals" className="text-sm font-medium text-green-700 hover:underline">Referrals</Link>
           <button onClick={load} className="p-2 text-gray-500 hover:text-gray-800" title="Refresh"><RefreshCw size={18} /></button>
