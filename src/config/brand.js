@@ -2,7 +2,7 @@ export const APP_NAME = 'Kasuwana'
 
 // Your details, shown on the landing page and in the legal pages.
 export const COMPANY_NAME = 'SIF TECHNOLOGIES LTD'
-export const COMPANY_ADDRESS = 'Kano, Nigeria'   
+export const COMPANY_ADDRESS = 'Katsina, Nigeria'   
 export const CONTACT_EMAIL = 'siftechnologyltd@gmail.com'
 export const CONTACT_PHONE = '0816 999 2202'
 export const WHATSAPP_NUMBER = '2348169992202'
