@@ -29,7 +29,7 @@ function SubscriptionBanner() {
   if (now > paidUntil) {
     const daysLeft = Math.max(1, Math.ceil((deactivatesAt - now) / DAY))
     tone = 'red'
-    text = `${who} subscription ended on ${fmt(paidUntil)}. The account will be deactivated in ${daysLeft} day${daysLeft === 1 ? '' : 's'} unless payment is received.${isOwner ? '' : ' Please let the owner know.'}`
+    text = `${who} subscription ended on ${fmt(paidUntil)}. The account will be suspended in ${daysLeft} day${daysLeft === 1 ? '' : 's'} unless payment is received.${isOwner ? '' : ' Please let the owner know.'}`
   } else {
     const daysToEnd = Math.ceil((paidUntil - now) / DAY)
     if (daysToEnd > 7) return null
