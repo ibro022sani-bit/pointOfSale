@@ -129,15 +129,27 @@ export async function applyActions(client, actions, log = () => {}) {
 }
 
 export function printPlan({ plan, mode }, print = console.log) {
+  // Check mode does nothing, so it shows the raw differences instead of what a restore would do
+  if (mode === 'check') {
+    print(`\n${'table'.padEnd(26)}${'backup'.padStart(8)}${'now'.padStart(8)}${'missing'.padStart(9)}${'different'.padStart(11)}${'extra'.padStart(8)}`)
+    for (const p of plan) {
+      print(`${p.table.padEnd(26)}${String(p.inBackup).padStart(8)}${String(p.inDatabase).padStart(8)}${String(p.missing.length).padStart(9)}${String(p.changed.length).padStart(11)}${String(p.extra.length).padStart(8)}`)
+    }
+    const total = (k) => plan.reduce((n, p) => n + p[k].length, 0)
+    print(`\nmissing = in the backup but not in the database, different = same record but changed, extra = in the database but not in the backup`)
+    print(`Total: missing ${total('missing')}, different ${total('changed')}, extra ${total('extra')}`)
+    return { add: 0, restore: 0, remove: 0, differences: total('missing') + total('changed') + total('extra') }
+  }
+
   const actions = actionsFor({ plan, mode })
   print(`\n${'table'.padEnd(26)}${'backup'.padStart(8)}${'now'.padStart(8)}${'to add'.padStart(9)}${'to restore'.padStart(12)}${'to remove'.padStart(11)}`)
   for (const [i, p] of plan.entries()) {
     const a = actions[i]
     print(`${p.table.padEnd(26)}${String(p.inBackup).padStart(8)}${String(p.inDatabase).padStart(8)}${String(a.insert.length).padStart(9)}${String(a.overwrite.length).padStart(12)}${String(a.remove.length).padStart(11)}`)
   }
-  const sum = (k) => actions.reduce((s, a) => s + a[k].length, 0)
+  const sum = (k) => actions.reduce((n, a) => n + a[k].length, 0)
   print(`\nTotal: add ${sum('insert')}, restore ${sum('overwrite')}, remove ${sum('remove')}`)
-  return { add: sum('insert'), restore: sum('overwrite'), remove: sum('remove') }
+  return { add: sum('insert'), restore: sum('overwrite'), remove: sum('remove'), differences: 0 }
 }
 
 async function main() {
@@ -200,7 +212,11 @@ Set RESTORE_SUPABASE_URL and RESTORE_SUPABASE_SERVICE_KEY first.`)
 
     const planned = await buildPlan(client, backup, mode)
     const totals = printPlan(planned)
-    if (mode === 'check') return console.log('\nCheck only. Nothing was changed.')
+    if (mode === 'check') {
+      return console.log(totals.differences === 0
+        ? '\nEverything in the database matches the backup. Nothing was changed.'
+        : `\n${totals.differences} differences found. Nothing was changed.`)
+    }
     if (totals.add + totals.restore + totals.remove === 0) return console.log('\nNothing to do. The database already matches.')
 
     let ok
@@ -225,7 +241,7 @@ Set RESTORE_SUPABASE_URL and RESTORE_SUPABASE_SERVICE_KEY first.`)
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   main().catch((err) => {
     console.error('\nStopped:', err.message)
-    console.error('Nothing is lost: run the same command again to carry on from where it stopped.')
+    console.error('Nothing is lost. If this was a rebuild, carry on with the same backup file and --mode=add. For add or replace, just run the same command again.')
     process.exit(1)
   })
 }
