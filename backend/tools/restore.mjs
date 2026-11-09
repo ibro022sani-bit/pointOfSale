@@ -152,11 +152,42 @@ export function printPlan({ plan, mode }, print = console.log) {
   return { add: sum('insert'), restore: sum('overwrite'), remove: sum('remove'), differences: 0 }
 }
 
+// The tool needs the SECRET key. The public (anon) key can read nothing and write nothing,
+// which would also make a database that is not empty look empty.
+export function keyRole(key) {
+  if (key.startsWith('sb_secret_')) return 'service_role'
+  if (key.startsWith('sb_publishable_')) return 'anon'
+  try {
+    const payload = key.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')
+    return JSON.parse(Buffer.from(payload, 'base64').toString('utf8')).role || 'unknown'
+  } catch {
+    return 'unknown'
+  }
+}
+// Narrow a FULL backup down to one business, so a single business can be restored from it
+export function filterToBusiness(backup, wanted) {
+  const tenants = backup.tables.tenants || []
+  const match = tenants.filter((t) => t.id === wanted || String(t.name).toLowerCase() === wanted.toLowerCase())
+  if (match.length !== 1) {
+    throw new Error(match.length === 0
+      ? `No business called "${wanted}" in this backup.`
+      : `More than one business matches "${wanted}". Use its id instead.`)
+  }
+  const id = match[0].id
+  const tables = {}
+  for (const [name, rows] of Object.entries(backup.tables)) {
+    if (name === 'referrers') continue
+    const col = name === 'tenants' ? 'id' : name === 'referrals' ? 'referred_tenant_id' : 'tenant_id'
+    tables[name] = rows.filter((r) => r[col] === id)
+  }
+  return { ...backup, tables, isFull: false }
+}
 async function main() {
   const args = process.argv.slice(2)
   const file = args.find((a) => !a.startsWith('--'))
   const mode = (args.find((a) => a.startsWith('--mode=')) || '').split('=')[1]
   const ignoreProblems = args.includes('--ignore-problems')
+  const businessArg = (args.find((a) => a.startsWith('--business=')) || '').slice('--business='.length)
 
   if (!file || !['check', 'add', 'replace', 'rebuild'].includes(mode)) {
     console.log(`Usage: node tools/restore.mjs <backup.zip> --mode=check|add|replace|rebuild
@@ -177,13 +208,20 @@ Set RESTORE_SUPABASE_URL and RESTORE_SUPABASE_SERVICE_KEY first.`)
     process.exit(1)
   }
 
+  if (keyRole(key) !== 'service_role') {
+    console.error(`That key is not the secret service_role key (it looks like: ${keyRole(key)}).
+Open the practice project's Project Settings > API Keys and copy the SECRET key (service_role), not the public/anon one.`)
+    process.exit(1)
+  }
+
   const { createClient } = await import('@supabase/supabase-js')
   const readline = await import('node:readline/promises')
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout })
   const ask = (q) => rl.question(q)
 
   try {
-    const backup = await readBackup(new Uint8Array(fs.readFileSync(file)))
+    let backup = await readBackup(new Uint8Array(fs.readFileSync(file)))
+    if (businessArg) backup = filterToBusiness(backup, businessArg)
     if (backup.hasProblems && !ignoreProblems) {
       console.error('This backup says it may be incomplete (see summary.txt). Take a new backup, or add --ignore-problems if you accept that.')
       process.exit(1)
@@ -241,6 +279,9 @@ Set RESTORE_SUPABASE_URL and RESTORE_SUPABASE_SERVICE_KEY first.`)
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   main().catch((err) => {
     console.error('\nStopped:', err.message)
+    if (/row-level security|permission denied|invalid api key/i.test(err.message)) {
+      console.error('Hint: this usually means the key is the public (anon) key. Use the SECRET service_role key of the practice project.')
+    }
     console.error('Nothing is lost. If this was a rebuild, carry on with the same backup file and --mode=add. For add or replace, just run the same command again.')
     process.exit(1)
   })
