@@ -359,13 +359,15 @@ Open the project's Project Settings > API Keys and copy the SECRET key (service_
         console.error('Take a NEW backup of this business now, then try again.')
         process.exit(1)
       }
-      if (total === 0) return console.log('\nNothing left to delete. If the business is not marked archived yet, run this again.')
+      if (total === 0) {
+        console.log("\nAll of this business's data is already deleted. It only needs to be marked as archived.")
+      }
 
       const name = prep.tenant.name
       console.log('\nThe backup file below must be saved somewhere safe BEFORE you continue:')
       console.log('  ' + file)
       if ((await ask(`\nType the business name exactly (${name}): `)) !== name) return console.log('Cancelled. Nothing was changed.')
-      if ((await ask('Type ARCHIVE to delete this data from the live database: ')) !== 'ARCHIVE') return console.log('Cancelled. Nothing was changed.')
+      if ((await ask('Type ARCHIVE to continue: ')) !== 'ARCHIVE') return console.log('Cancelled. Nothing was changed.')
 
       const { deleteBy } = await applyArchive(client, prep, { file }, (m) => console.log('  ' + m))
       console.log(`\nDone. Keep the backup file safe until ${deleteBy.toISOString().slice(0, 10)}, then delete it.`)
