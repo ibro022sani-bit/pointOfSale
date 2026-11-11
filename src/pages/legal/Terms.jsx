@@ -1,6 +1,6 @@
 import LegalPage from './LegalPage'
 import {
-  APP_NAME, COMPANY_NAME, COMPANY_ADDRESS, CONTACT_EMAIL, CONTACT_PHONE, DATA_RETENTION_DAYS,
+  APP_NAME, COMPANY_NAME, COMPANY_ADDRESS, CONTACT_EMAIL, CONTACT_PHONE, DATA_RETENTION_DAYS, ARCHIVE_MONTHS,
 } from '../../config/brand'
 
 const US = COMPANY_NAME || APP_NAME
@@ -36,10 +36,11 @@ const sections = [
     ],
   },
   {
-    heading: 'Deactivated accounts and your data',
+    heading: 'Suspended accounts and your data',
     body: [
-      `While an account is deactivated we keep its data for at least ${DATA_RETENTION_DAYS} days. If it is reactivated in that time, everything is still there. After that period we may permanently delete the data.`,
-      'Before your account is deleted, you can ask us for a copy of your data.',
+      `While an account is suspended we keep its data on our live system for ${DATA_RETENTION_DAYS} days, counted from the day it was suspended. If it is reactivated in that time, everything is still there.`,
+      `After that we remove your data from our live system. We keep a secure, encrypted archive copy for ${ARCHIVE_MONTHS} months so that, if you return, we can restore it for you. Restoring needs your account to be paid up, and a restoration fee may apply. When the archive period ends we delete the archive copy permanently.`,
+      'You can ask us for a copy of your data at any time, and you can ask us to delete your archive earlier. We may keep records of your payments to us for as long as the law requires.',
     ],
   },
   {

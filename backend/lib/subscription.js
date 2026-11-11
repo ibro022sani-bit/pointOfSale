@@ -35,6 +35,7 @@ export async function autoDeactivate(tenant) {
       .update({
         status: 'deactivated',
         status_note: 'Automatically deactivated: payment overdue',
+        deactivated_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       })
       .eq('id', tenant.id)

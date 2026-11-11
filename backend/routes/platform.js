@@ -63,7 +63,11 @@ router.put('/tenants/:id', async (req, res) => {
     if (status !== undefined) {
       if (!['active', 'deactivated'].includes(status)) return error(res, 'status must be active or deactivated')
       updates.status = status
-      if (status === 'active') updates.activated_at = new Date().toISOString()
+      if (status === 'active') {
+        updates.activated_at = new Date().toISOString()
+        updates.deactivated_at = null
+      }
+      if (status === 'deactivated') updates.deactivated_at = new Date().toISOString()
     }
     if (paid_until !== undefined) {
       if (paid_until && isNaN(new Date(paid_until).getTime())) return error(res, 'Invalid paid_until date')
@@ -149,6 +153,10 @@ router.post('/tenants/:id/payments', async (req, res) => {
     if (tenant.status !== 'active') {
       patch.activated_at = now.toISOString()
       patch.status_note = null // clears an old "automatically deactivated" note
+      patch.deactivated_at = null
+      if (tenant.status === 'archived') {
+        patch.status_note = 'Returned after being archived. Restore their data from the archive file.'
+      }
     }
 
     const { data: updated, error: updateErr } = await supabase

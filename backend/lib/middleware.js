@@ -42,6 +42,7 @@ async function isUserActive(userId) {
 const INACTIVE_MESSAGES = {
   pending: 'Your account is awaiting activation. Please contact support.',
   deactivated: 'This account has been Suspended. Please make payment to reactivate it.',
+  archived: 'This account has been archived. Please contact support to have it restored.',
 }
 
 export async function requireAuth(req, res, next) {

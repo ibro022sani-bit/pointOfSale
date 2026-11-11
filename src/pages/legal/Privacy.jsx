@@ -1,6 +1,6 @@
 import LegalPage from './LegalPage'
 import {
-  APP_NAME, COMPANY_NAME, COMPANY_ADDRESS, CONTACT_EMAIL, CONTACT_PHONE, DATA_RETENTION_DAYS,
+  APP_NAME, COMPANY_NAME, COMPANY_ADDRESS, CONTACT_EMAIL, CONTACT_PHONE, DATA_RETENTION_DAYS, ARCHIVE_MONTHS,
 } from '../../config/brand'
 
 const US = COMPANY_NAME || APP_NAME
@@ -50,7 +50,7 @@ const sections = [
   {
     heading: 'How long we keep it',
     body: [
-      `We keep your information while your account is active. If your account is deactivated, we keep it for at least ${DATA_RETENTION_DAYS} days, after which it may be permanently deleted. We may keep certain records for longer where the law requires.`,
+      `We keep your information while your account is active. If your account is deactivated, we keep it on our live system for ${DATA_RETENTION_DAYS} days. After that we remove it from the live system and keep an encrypted archive copy for ${ARCHIVE_MONTHS} months, so it can be restored if you return. We then delete the archive permanently, and you can ask us to delete it sooner. We may keep certain records, such as your payments to us, for longer where the law requires.`,
     ],
   },
   {

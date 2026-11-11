@@ -13,10 +13,14 @@ const STATUS_STYLES = {
   pending: 'bg-amber-100 text-amber-700',
   active: 'bg-green-100 text-green-700',
   deactivated: 'bg-red-100 text-red-700',
+  archived: 'bg-gray-200 text-gray-600',
 }
 const fmt = (d) => (d ? new Date(d).toLocaleDateString('en-NG', { dateStyle: 'medium' }) : '—')
 const naira = (n) => `₦${Number(n || 0).toLocaleString('en-NG')}`
 const isOverdue = (t) => t.status === 'active' && t.paid_until && new Date(t.paid_until) < new Date()
+const RETENTION_DAYS = 100 // keep in step with RETENTION_DAYS in backend/tools/restore.mjs
+const daysSince = (d) => Math.floor((Date.now() - new Date(d).getTime()) / DAY)
+const isReadyToArchive = (t) => t.status === 'deactivated' && t.deactivated_at && daysSince(t.deactivated_at) >= RETENTION_DAYS
 const isDueSoon = (t) =>
   t.status === 'active' && t.paid_until && new Date(t.paid_until) < new Date(Date.now() + 7 * DAY)
 
@@ -182,11 +186,13 @@ function Tenants() {
   const shown = tenants.filter((t) => {
     if (filter === 'all') return true
     if (filter === 'due') return isDueSoon(t)
+    if (filter === 'ready') return isReadyToArchive(t)
     return t.status === filter
   })
   const pendingCount = tenants.filter((t) => t.status === 'pending').length
   const staleFull = !lastFull || Date.now() - new Date(lastFull).getTime() > 7 * DAY
   const dueCount = tenants.filter(isDueSoon).length
+  const readyCount = tenants.filter(isReadyToArchive).length
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -222,6 +228,8 @@ function Tenants() {
             ['active', 'Active'],
             ['due', `Due soon${dueCount ? ` (${dueCount})` : ''}`],
             ['deactivated', 'Deactivated'],
+            ['ready', `Ready to archive${readyCount ? ` (${readyCount})` : ''}`],
+            ['archived', 'Archived'],
           ].map(([key, label]) => (
             <button
               key={key}
@@ -253,6 +261,17 @@ function Tenants() {
                     <p className="font-medium text-gray-800">{t.name}</p>
                     <p className="text-xs text-gray-400 mt-0.5">Signed up {fmt(t.created_at)}</p>
                     {t.status_note && <p className="text-xs text-gray-400">{t.status_note}</p>}
+                    {t.status === 'deactivated' && t.deactivated_at && (
+                      <p className="text-xs text-gray-400">
+                        Deactivated {daysSince(t.deactivated_at)} days ago
+                        {isReadyToArchive(t)
+                          ? ' · ready to archive'
+                          : ` · archive possible in ${RETENTION_DAYS - daysSince(t.deactivated_at)} days`}
+                      </p>
+                    )}
+                    {t.archive_file && t.status !== 'archived' && (
+                      <p className="text-xs text-amber-600">Returned. Restore from archive file: {t.archive_file}</p>
+                    )}
                   </td>
                   <td className="px-4 py-3 text-gray-600">
                     {t.owner ? (<><p>{t.owner.name}</p><p className="text-xs text-gray-400">{t.owner.email}{t.owner.phone ? ` · ${t.owner.phone}` : ''}</p></>) : '—'}
