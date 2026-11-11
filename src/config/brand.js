@@ -10,7 +10,7 @@ export const WHATSAPP_NUMBER = '2348169992202'
 export const PRICING_NOTE = 'Simple monthly pricing based on the size of your business. Contact us for a quote.'
 
 // How long we keep a deactivated business's data before it may be deleted.
-export const DATA_RETENTION_DAYS = 1
+export const DATA_RETENTION_DAYS = 100
 // After that, how many months an encrypted archive copy is kept before it is deleted.
 export const ARCHIVE_MONTHS = 12
 export const LEGAL_LAST_UPDATED = 'November 11, 2026'
