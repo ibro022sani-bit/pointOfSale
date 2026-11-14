@@ -3,6 +3,7 @@ import toast from 'react-hot-toast'
 import api from '../../services/api'
 import useAuthStore from '../../store/authStore'
 import CatalogManager from './CatalogManager'
+import ExpenseCategoryManager from './ExpenseCategoryManager'
 
 const inputClass =
   'w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-transparent'
@@ -105,6 +106,8 @@ function Settings() {
       </form>
 
       <CatalogManager />
+
+      <ExpenseCategoryManager />
 
       {info && (
         <div className="bg-white rounded-2xl border p-6 space-y-3 text-sm">

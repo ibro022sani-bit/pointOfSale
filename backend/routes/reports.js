@@ -174,8 +174,8 @@ router.get('/expenses', async (req, res) => {
 
     let query = req.db.from('expenses').select('*')
     if (branch_id) query = query.eq('branch_id', branch_id)
-    if (date_from) query = query.gte('created_at', date_from)
-    if (date_to) query = query.lte('created_at', date_to)
+    if (date_from) query = query.gte('expense_date', String(date_from).slice(0, 10))
+    if (date_to) query = query.lte('expense_date', String(date_to).slice(0, 10))
 
     const { data, error: dbError } = await query
     if (dbError) return error(res, 'Could not generate expense report', 500)
@@ -244,8 +244,8 @@ router.get('/profit-loss', async (req, res) => {
 
     let expenseQuery = req.db.from('expenses').select('amount')
     if (branch_id) expenseQuery = expenseQuery.eq('branch_id', branch_id)
-    if (date_from) expenseQuery = expenseQuery.gte('created_at', date_from)
-    if (date_to) expenseQuery = expenseQuery.lte('created_at', date_to)
+    if (date_from) expenseQuery = expenseQuery.gte('expense_date', String(date_from).slice(0, 10))
+    if (date_to) expenseQuery = expenseQuery.lte('expense_date', String(date_to).slice(0, 10))
 
     const { data: expenses } = await expenseQuery
     const total_expenses = (expenses || []).reduce((sum, e) => sum + Number(e.amount), 0)

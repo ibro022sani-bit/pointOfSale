@@ -4,6 +4,7 @@ export const BUSINESS_TABLES = [
   'users',
   'product_categories',
   'product_units',
+  'expense_categories',
   'products',
   'branch_products',
   'stock',

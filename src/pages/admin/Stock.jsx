@@ -3,6 +3,7 @@ import { Plus, ArrowLeftRight, AlertTriangle, Package, Truck } from 'lucide-reac
 import toast from 'react-hot-toast'
 import api from '../../services/api'
 import useAuthStore from '../../store/authStore'
+import ProductPicker from '../../components/common/ProductPicker'
 
 function Stock() {
   const [stock, setStock] = useState([])
@@ -373,18 +374,11 @@ function RestockModal({ branches, suppliers, defaultBranchId, isSuperAdmin, user
               {items.map((item, index) => (
                 <div key={index} className="flex gap-2 items-start">
                   <div className="flex-1 space-y-2">
-                    <select
+                    <ProductPicker
+                      products={products}
                       value={item.product_id}
-                      onChange={(e) => updateItem(index, 'product_id', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
-                    >
-                      <option value="">Select product</option>
-                      {products.map((p) => (
-                        <option key={p.product_id} value={p.product_id}>
-                          {p.products?.name}
-                        </option>
-                      ))}
-                    </select>
+                      onChange={(id) => updateItem(index, 'product_id', id)}
+                    />
                     <div className="flex gap-2">
                       <input
                         type="number"
@@ -614,19 +608,14 @@ function TransferModal({ branches, defaultFromBranchId, isSuperAdmin, userBranch
             <label className="block text-sm font-medium text-gray-600 mb-2">Products *</label>
             <div className="space-y-3">
               {items.map((item, index) => (
-                <div key={index} className="flex gap-2 items-center">
-                  <select
-                    value={item.product_id}
-                    onChange={(e) => updateItem(index, 'product_id', e.target.value)}
-                    className="flex-1 px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
-                  >
-                    <option value="">Select product</option>
-                    {products.map((p) => (
-                      <option key={p.product_id} value={p.product_id}>
-                        {p.products?.name}
-                      </option>
-                    ))}
-                  </select>
+                <div key={index} className="flex gap-2 items-start">
+                  <div className="flex-1">
+                    <ProductPicker
+                      products={products}
+                      value={item.product_id}
+                      onChange={(id) => updateItem(index, 'product_id', id)}
+                    />
+                  </div>
                   <input
                     type="number"
                     placeholder="Qty"

@@ -4,7 +4,7 @@ import jwt from 'jsonwebtoken'
 import crypto from 'crypto'
 import { rateLimit, rateLimitBody } from '../lib/rateLimit.js'
 import { requireAuth } from '../lib/middleware.js'
-import { DEFAULT_CATEGORIES, DEFAULT_UNITS } from '../lib/catalogDefaults.js'
+import { DEFAULT_CATEGORIES, DEFAULT_UNITS, DEFAULT_EXPENSE_CATEGORIES } from '../lib/catalogDefaults.js'
 import { isExpired, autoDeactivate } from '../lib/subscription.js'
 import supabase from '../lib/supabase.js'
 import { success, error } from '../lib/helpers.js'
@@ -119,6 +119,9 @@ router.post('/signup', rateLimit('signup', 5, 3600), async (req, res) => {
     const { error: unitErr } = await supabase
       .from('product_units').insert(DEFAULT_UNITS.map((name) => ({ tenant_id: tenantId, name })))
     if (unitErr) throw unitErr
+    const { error: expCatErr } = await supabase
+      .from('expense_categories').insert(DEFAULT_EXPENSE_CATEGORIES.map((name) => ({ tenant_id: tenantId, name })))
+    if (expCatErr) throw expCatErr
 
     const hashedPassword = await bcrypt.hash(password, 10)
     const { error: userErr } = await supabase
@@ -134,6 +137,7 @@ router.post('/signup', rateLimit('signup', 5, 3600), async (req, res) => {
     if (tenantId) {
       await supabase.from('referrals').delete().eq('referred_tenant_id', tenantId)
       await supabase.from('product_categories').delete().eq('tenant_id', tenantId)
+      await supabase.from('expense_categories').delete().eq('tenant_id', tenantId)
       await supabase.from('product_units').delete().eq('tenant_id', tenantId)
       await supabase.from('users').delete().eq('tenant_id', tenantId)
       await supabase.from('branches').delete().eq('tenant_id', tenantId)

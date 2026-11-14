@@ -10,7 +10,7 @@ import { pathToFileURL } from 'node:url'
 
 // Parents first. Deleting happens in the reverse order.
 export const ORDER = [
-  'tenants', 'branches', 'users', 'product_categories', 'product_units', 'products',
+  'tenants', 'branches', 'users', 'product_categories', 'product_units', 'expense_categories', 'products',
   'branch_products', 'stock', 'suppliers', 'stock_receipts', 'stock_receipt_items',
   'stock_receipt_payments', 'stock_transfers', 'stock_transfer_items', 'customers',
   'credit_accounts', 'deposit_accounts', 'sales', 'payments', 'credit_transactions',
