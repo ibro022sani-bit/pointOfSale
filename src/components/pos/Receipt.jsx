@@ -1,6 +1,8 @@
 import { useRef } from 'react'
 import { useReactToPrint } from 'react-to-print'
-import { Printer, X } from 'lucide-react'
+import { Printer, X, Share2 } from 'lucide-react'
+import { toPng } from 'html-to-image'
+import toast from 'react-hot-toast'
 import useAuthStore from '../../store/authStore'
 import { APP_NAME } from '../../config/brand'
 
@@ -11,6 +13,26 @@ function Receipt({ sale, onClose }) {
   const handlePrint = useReactToPrint({
     contentRef: receiptRef,
   })
+
+  const handleShare = async () => {
+    try {
+      const dataUrl = await toPng(receiptRef.current, { backgroundColor: '#ffffff', pixelRatio: 2 })
+      const blob = await (await fetch(dataUrl)).blob()
+      const file = new File([blob], `receipt-${sale.id?.slice(0, 8)}.png`, { type: 'image/png' })
+
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title: 'Receipt' })
+      } else {
+        const link = document.createElement('a')
+        link.href = dataUrl
+        link.download = file.name
+        link.click()
+        toast.success('Receipt image downloaded')
+      }
+    } catch (err) {
+      if (err?.name !== 'AbortError') toast.error('Could not create receipt image')
+    }
+  }
 
   if (!sale) return null
 
@@ -26,6 +48,13 @@ function Receipt({ sale, onClose }) {
         <div className="print:hidden flex items-center justify-between p-4 border-b border-gray-100">
           <h2 className="font-bold text-gray-800">Receipt</h2>
           <div className="flex items-center gap-2">
+            <button
+              onClick={handleShare}
+              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-3 py-2 rounded-xl transition"
+            >
+              <Share2 size={16} />
+              Share
+            </button>
             <button
               onClick={handlePrint}
               className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold px-3 py-2 rounded-xl transition"
